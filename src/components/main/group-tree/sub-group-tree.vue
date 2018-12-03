@@ -1,16 +1,16 @@
 <template>
-  <div class="sider-group">
+  <div class="sider-group" :style="paddingLeftStyle">
     <template v-for="item in groupList">
       <Submenu :key="item.gid" :name="item.gid">
-        <template slot="title">
+        <template slot="title" :style="paddingLeftStyle">
           <Icon type="ios-people" size="24" color="#4990d7"/>
           <div class="name">{{item.name}}</div>
-          <span v-html="getOnline(item.gid)"></span>
+          <span>{{`[${item.onlineNum}/${item.all}]`}}</span>
         </template>
         <template v-if="item.children && item.children.length > 0">
           <sub-group :groupList="item.children"></sub-group>
         </template>
-        <member-list :memberList="memberObj[item.gid]" :paddingLeftStyle="getPaddingLeft(item.deep)"/>
+        <member-list :memberList="memberObj[item.gid]" @on-scroll="toScroll"/>
       </Submenu>
     </template>
     <slot></slot>
@@ -19,12 +19,22 @@
 
 <script>
 import MemberList from './member-list'
+import mixin from './mixin'
 
 export default {
   name: 'SubGroupTree',
   props: {
-    groupList: Array
+    groupList: Array,
+    paddingLeftStyle: {
+      type: Object,
+      default: () => {
+        return {
+          paddingLeft: '24px'
+        }
+      }
+    }
   },
+  mixins: [mixin],
   components: {
     MemberList
   },
@@ -37,17 +47,15 @@ export default {
   mounted () {
   },
   methods: {
-    getPaddingLeft (deep) {
-      return {
-        paddingLeft: `${(deep + 1) * 36}px`
-      }
-    },
     getOnline (gid) {
       let list = this.$store.getters.memberList[gid]
       let online = list.filter((item) => {
         return item.online === '1'
       })
       return `[${online.length}/${list.length}]`
+    },
+    toScroll (distance) {
+      this.$emit('on-scroll', distance)
     }
   }
 }

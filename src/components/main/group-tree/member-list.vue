@@ -1,10 +1,15 @@
 <template>
   <div class="member-wrap" :style="paddingLeftStyle">
-    <CheckboxGroup @on-change="handleSelectMember" v-model="selectList">
-    <div v-for="(item, index) in memberList" :key="index" class="item flex align-center">
+    <CheckboxGroup v-model="selectList">
+    <div v-for="(item, index) in memberList" 
+          class="item flex align-center" 
+          :key="index" 
+          :ref="item.cid" 
+          :class="getActiveClass(item.cid, selectList)"
+          @click="selectItem(item.cid)">
       <Checkbox :label="item.cid" class="label">
       </Checkbox>
-        <img :src="iconImg(item.type, item.online)" alt="">
+        <img :src="iconImg({terminalType: item.type, online: item.online})" alt="" class="img">
         <span class="name">{{item.name}}</span>
     </div>
     </CheckboxGroup>
@@ -12,9 +17,10 @@
 </template>
 
 <script>
-import mixin from '@/store/mixin'
+import mixin from '@/store/mixins/mixin'
 import * as types from '@/store/types/group'
-import { uniqueArr, filterArrByKey } from '@/utils/utils'
+import * as app from '@/store/types/app'
+import { uniqueArr, filterArrByKey, filterObjArrByKey } from '@/utils/utils'
 
 export default {
   name: 'MemberList',
@@ -28,7 +34,7 @@ export default {
       type: Object,
       default: () => {
         return {
-          paddingLeft: '44px'
+          paddingLeft: '24px'
         }
       }
     }
@@ -39,50 +45,77 @@ export default {
         return this.$store.getters.treeGroupSelectedList
       },
       set (val) {
-        console.log(val)
         this.$store.commit(types.SetTreeGroupSelectedList, val)
       }
     }
   },
   data () {
     return {
-      tempList: []
-      // selectList: []
+      tempList: [],
+      selectListLength: 0
     }
   },
   methods: {
-    handleSelectMember (res) {
-      let selectMembers = filterArrByKey(res, this.memberList, 'cid') // 根据cid选出items
-      let nowSelectTempMember = this.$store.getters.tempGroupMembers
-
-      if (res.length > nowSelectTempMember.length) { // 同一组选择成员
-        nowSelectTempMember = selectMembers
-      } else { // 跨群组选择成员
-        nowSelectTempMember = nowSelectTempMember.concat(selectMembers)
+    hasCid (cid, list) {
+      return list.some(item => {
+          return item === cid
+      })
+    },
+    getActiveClass (cid, list) {
+      let hasCid = this.hasCid(cid, list)
+      return hasCid ? 'active' : ''
+    },
+    getScrollDistance (list) {
+      if (list.length === 1 && this.$store.getters.isSearch) {
+        let element = this.$refs[list[0]]
+        if (element) {
+          let ele = element[0]
+          let distance = element[0].offsetTop
+          this.$emit('on-scroll', distance)
+        }
       }
-
-      let newArr = uniqueArr(nowSelectTempMember)
-      this.$store.commit(types.SetTempGroupMembers, newArr)
+    },
+    selectItem(cid) {
+      let newArr = [...this.selectList]
+      let hasCid = this.hasCid(cid, newArr)
+      if (!hasCid) {
+        newArr.push(cid)
+      } else {
+        let index = newArr.indexOf(cid)
+        newArr.splice(index, 1)
+        console.log(newArr)
+      }
+      this.$store.commit(types.SetTreeGroupSelectedList, newArr)
+    }
+  },
+  watch: {
+    selectList (list) {
+      this.getScrollDistance(list)
     }
   }
 }
 </script>
-
-<style>
-  .member-wrap {
-    padding: 0 44px;
-    line-height: 40px
-  }
-  .item {
-    text-align: left
-  }
-</style>
 
 <style lang="stylus">
   @import './reset.styl'
 </style>
 
 <style lang="stylus" scoped>
+@import '../../../assets/styles/variable.styl';
+.member-wrap
+  line-height: 40px
+  .item
+    padding 0 10px
+    text-align left
+    cursor pointer
+    margin-bottom 3px
+    &.active
+      background $color-theme-light-l
+    &:hover
+      background $color-theme-light-ll
+    .img
+      width 20px
+      margin-right 5px
   .label
     font-size 0
 </style>

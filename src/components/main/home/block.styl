@@ -1,0 +1,48 @@
+@import '../../../assets/styles/variable.styl'
+.group-item
+  height 240px
+  width 198px
+  border-radius 12px
+  background #ffffff
+  margin-right 20px
+  box-shadow 0 0 3px 5px rgba(100, 139, 149, .2)
+  padding 20px
+  cursor pointer
+  flex-direction column
+  transition all .3s
+  .top
+    height 140px
+  .info-line
+    height 30px
+    line-height 30px
+    text-align left
+  .title
+    font-size 16px
+    color #000000
+    overflow hidden
+    text-overflow ellipsis
+    white-space nowrap
+  .bottom
+    height 80px
+    .id
+      font-size 12px
+  .label
+    font-size 0
+  &:hover
+    opacity .9
+    box-shadow 0 0 3px 5px rgba(73, 144, 215, .35)
+  &.active
+    border 2px solid rgb(73, 144, 215)
+    background $color-sub-theme
+.add-btn
+  transition all .3s
+  &:hover
+    border 1px solid $color-theme
+    i
+      color $color-theme
+.temp-group
+  background #b7f5a8
+  text-align center
+  .icon-close
+    top -8px
+    right -8px

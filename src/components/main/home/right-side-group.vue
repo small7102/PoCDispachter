@@ -1,14 +1,14 @@
 <template>
   <div class="side-group-wrap">
-    <card :style="{width: '180px', margin: '36px auto'}">
+    <card class="card">
         <p slot="title" class="title">
            最近群组
         </p>
-        <i-button class="btn">
-          Recent Group
+        <i-button class="btn btn-item">
+          最近群组
         </i-button>
     </card>
-    <card :style="{width: '180px', margin: '36px auto'}">
+    <card class="card">
         <p slot="title" class="title">
            快捷群组
         </p>
@@ -17,13 +17,14 @@
         </template>
         <template v-else>
           <div class="temp-list scroll-bar">
-            <div class="btn-wrap pr"
+            <div class="btn-wrap pr btn-item"
                 v-for="(item, index) in tempGroupList"
                 :key="item.id"
+                @click.stop="selectTempGroup(item)"
                 @mouseover="activeIndex = index"
                 @mouseout="activeIndex = ''"
                 >
-              <Button class="mt12 temp-item w100 pr" @click.stop="handleSelectTempGroup(item)">
+              <Button class="mt12 temp-item w100 pr" :key="item.id">
                 {{item.name}}
               </Button>
               <Icon
@@ -36,7 +37,7 @@
 
             <div class="bottom-wrap" @click="deleteAllTempGroup">
               <Icon type="ios-trash-outline" size="20"/>
-              删除所有记录
+              删除所有
             </div>
           </div>
         </template>
@@ -48,6 +49,8 @@
 import { Card, Button } from 'iview'
 import Storage from '@/utils/localStorage'
 import * as types from '@/store/types/group'
+import mx from './mixin'
+import {debounce} from '@/utils/utils'
 
 export default {
   name: 'SideGroup',
@@ -55,41 +58,38 @@ export default {
     'Card': Card,
     'i-button': Button
   },
+  mixins: [mx],
   computed: {
     tempGroupList () {
       let list = this.$store.getters.tempGroupList
-      console.log(list)
       return list
     }
   },
   data () {
     return {
       activeIndex: '',
-      isModalShow: false,
       deleteItem: ''
     }
   },
   methods: {
-    handleSelectTempGroup (item) {
-      this.$store.commit(types.SetTempGroupMembers, item.membersList)
-      this.$emit('on-select', item)
-    },
     deleteTempGroup (item, index) {
-      this.isModalShow = true
       this.deleteItem = item
-      let list = this.$store.getters.tempGroupList
+      let list = [...this.$store.getters.tempGroupList]
       list.splice(index, 1)
       this.$store.commit(types.SetTempGroupList, list)
-      Storage.localSet('tempGroup', list)
+      let myTempInfo = Storage.localGet('myTempInfo')
+      let user = this.$store.getters.userInfo.msId
+
+      myTempInfo[user] = list
+      Storage.localSet('myTempInfo', myTempInfo)
     },
     deleteAllTempGroup () {
       this.$store.commit(types.SetTempGroupList, [])
-      Storage.localSet('tempGroup', [])
-    }
-  },
-  watch: {
-    tempGroupList (val) {
-      console.log(val)
+      Storage.localSet('myTempInfo', null)
+    },
+    selectTempGroup (item) {
+      this.$store.commit(types.SetTreeGroupSelectedList, item.cids)
+      this.toCreatTempGroup({tempInfo: item, creatType: 'TEMP_GROUP'})
     }
   }
 }
@@ -98,6 +98,13 @@ export default {
 <style lang="stylus" scoped>
   @import '../../../assets/styles/variable.styl'
 
+.card
+  width 90%
+  margin 36px auto
+  .btn-item
+    overflow hidden
+    text-overflow ellipsis
+    white-space nowrap
   .title
     text-align center
   .btn

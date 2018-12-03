@@ -1,7 +1,7 @@
 <template>
     <div class="home-wrap h100">
-        <Layout :style="{background: '#ffffff'}" class="h100 direction-row">
-          <Content :style="{padding: '0 12px'}" class="flex direction-column">
+        <Layout class="h100 direction-row">
+          <Content :style="{paddingLeft: '12px'}" class="flex direction-column">
             <div class="con-top">
               <span>群组</span>
             </div>
@@ -10,36 +10,47 @@
                 <Layout class="main-content h100">
                   <Header class="group-header">
                     <block-group
-                      @on-add='addTempGroup'
                       @on-back="backToTempGroup"
-                      @on-quit='quitTempGroup'
                       @on-init='initMemberList'
                       :tempGroup="tempGroup"
                       :isRemoving="isRemoving"
-                      :singleName="singleName"
                       />
                   </Header>
                   <Content class="flex-item h100 scroll-bar" :style="{overflow: 'hidden'}">
-                    <group-member
-                      :memberList="memberList"
-                      @on-quit="quitTempGroup"
-                      @on-single-call="newSingleCall"/>
+                    <group-member :memberList="memberList"/>
                   </Content>
                   <Header class="send-footer">
                     <send-message/>
                   </Header>
                 </Layout>
               </Content>
-              <Sider :width="216" hide-trigger class="right-sider-wrap h100">
-                <right-side-group @on-select="handleSelectTempGroup"/>
+              <Sider :width="200" hide-trigger class="right-sider-wrap h100" collapsible :collapsed-width="120" v-model="isCollapsed" breakpoint="lg">
+                <right-side-group 
+                @on-select="handleSelectTempGroup"
+                />
               </Sider>
             </Layout>
           </Content>
 
           <!-- 最侧边 -->
-          <!-- <Sider :width="250" hide-trigger :style="{background: '#f3f3f3'}">
-            <div>我是侧边</div>
-          </Sider> -->
+          <Sider hide-trigger class="record-wrap" :width="240" collapsible>
+            <div class=" flex direction-column h100">
+              <Layout class="right-card sms-card">
+                <Header class="card-title">
+                  消息记录
+                </Header>
+                <Content class="h100">
+                  <message-list/>
+                </Content>
+              </Layout>
+              <Layout class="right-card voice-card">
+                <Header  class="card-title">语音记录</Header>
+                <Content class="voice-content h100">
+                  <voice-list/>
+                </Content>
+              </Layout>
+            </div>
+          </Sider>
         </Layout>
     </div>
 </template>
@@ -49,6 +60,8 @@ import BlockGroup from './block-group'
 import GroupMember from './group-member'
 import SendMessage from './send-message'
 import RightSideGroup from './right-side-group'
+import VoiceList from './voice-list'
+import MessageList from './message-list'
 
 export default {
   name: 'Home',
@@ -56,7 +69,9 @@ export default {
     BlockGroup,
     GroupMember,
     SendMessage,
-    RightSideGroup
+    RightSideGroup,
+    VoiceList,
+    MessageList
   },
   data () {
     return {
@@ -64,33 +79,19 @@ export default {
       showTempGroup: false,
       memberList: [],
       isRemoving: false,
-      singleName: ''
+      isCollapsed: false
     }
   },
   methods: {
-    addTempGroup (list) {
-      console.log(list)
-      this.tempList = list
-    },
-    quitTempGroup (list) {
-      this.tempList = []
-      this.isRemoving = true
-    },
-    backToTempGroup (list) {
-      this.tempList = list
+    backToTempGroup () {
       this.memberList = []
     },
     handleSelectTempGroup (item) {
       this.tempGroup = item
-      this.tempList = item.membersList
       this.showTempGroup = true
     },
     initMemberList (list) {
       this.memberList = list
-    },
-    newSingleCall (name) {
-      console.log(name)
-      this.singleName = name
     }
   }
 }
@@ -123,4 +124,30 @@ export default {
     .right-sider-wrap
       background $color-theme
       margin-left 3px
+    .record-wrap
+      padding 0 8px
+      background #f3f3f3
+      height 100%
+      overflow hidden
+      .right-card
+        width 100%
+        margin 10px 0
+        background #ffffff
+        border-radius 6px
+        overflow hidden
+        height 45%
+        &.voice-card
+          height 55%
+      .card-title
+        background #ffffff
+        text-align center
+        color #333
+        font-weight bold
+        border-bottom 1px solid #eeeeee
+        height 50px
+        line-height 50px
+        overflow hidden
+        text-overflow ellipsis
+        white-space nowrap
+        padding 0
 </style>

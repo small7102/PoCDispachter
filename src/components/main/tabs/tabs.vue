@@ -1,10 +1,12 @@
 <template>
   <div class="tabs">
-    <router-link tag="a" to="/home"
+    <router-link tag="a"
                 class="link-item flex align-items"
                 v-for="(item, index) in tabsList"
-                :class="{active: item.active}"
+                :class="{active: index === activeIndex}"
                 :key="index"
+                :to="item.path"
+                @click="activeIndex=index"
                 >
       <i-icon :style="iconWidth" :type="item.iconType" :size="item.iconSize"/>
       <span v-html="item.name"></span>
@@ -34,30 +36,35 @@ export default {
   },
   data () {
     return {
+      activeIndex: '',
       tabsList: [
         {
           name: '语音调度',
           active: true,
           iconType: 'ios-mic-outline',
-          iconSize: 24
+          iconSize: 24,
+          path: '/home'
         },
         {
           name: '定位监控',
           active: false,
           iconType: 'ios-pin-outline',
-          iconSize: 24
+          iconSize: 24,
+          path: '/monitoring'
         },
         {
           name: '轨迹回放',
           active: false,
           iconType: 'ios-sync',
-          iconSize: 22
+          iconSize: 22,
+          path: '/a'
         },
         {
           name: '日&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;志',
           active: false,
           iconType: 'ios-paper-outline',
-          iconSize: 22
+          iconSize: 22,
+          path: '/b'
         }
       ]
     }
@@ -79,7 +86,7 @@ export default {
     overflow hidden
     span
       width 180px
-    &.active
+    &.router-link-active
       background $color-theme-weight-d
       color #ffffff
     .right-arrow

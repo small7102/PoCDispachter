@@ -1,123 +1,133 @@
 <template>
-  <div class="group-member-wrap scroll-bar">
-      <ul class="clearfix" v-if="memberListShow">
-        <li class="member-item fl pr"
-            v-for="(item, index) in memberList"
-            :key="item.cid"
-            :class="{active: index===activeIndex, myself: item.cid === msId}"
-            @click="creatSingleGroup(item, index)"
-            >
-          <Icon type="ios-contact" v-if="item.cid === msId" color="#c77453" size="16" class="myself-icon pa"/>
-          <div class="img-wrap flex align-center justify-center">
-            <img :src="iconImg(item.type, item.online)" alt="">
-          </div>
-          <div class="id" v-html="item.name">
-          </div>
-        </li>
-      </ul>
-      <ul class="clearfix" v-else>
-        <li class="member-item fl pr"
-            v-for="(item, index) in tempList"
-            :key="item.cid"
-            :class="{active: index===activeIndex, myself: item.cid === msId}"
-            >
-            <Icon type="ios-contact" v-if="item.cid === msId" color="#c77453" size="16" class="myself-icon pa"/>
-          <div class="img-wrap flex align-center justify-center">
-            <img :src="iconImg(item.type, item.online)" alt="">
-          </div>
-          <div class="id" v-html="item.name">
-          </div>
-        </li>
-      </ul>
-  </div>
+  <transition name="slider">
+    <div class="group-member-wrap scroll-bar">
+      <member-list :list="rowMemberList" 
+                  v-if="memberListShow" 
+                  @on-select="creatSingleGroup"
+                  :msId="msId"
+                  :colNum="colNum"
+                  />
+      <member-list v-else
+                  type="temp"
+                  :list="rowTempMemberList"
+                  :msId="msId"
+                  :colNum="colNum"
+                  />
+    </div>
+    </transition>
 </template>
 
 <script>
-import mixin from '@/store/mixin'
+import mixin from '@/store/mixins/mixin'
+import addTemp from './mixin'
 import * as types from '@/store/types/group'
-// import { createTempGroup } from '@/libs/webDispatcher-sdk.js'
-// import {Message} from 'iview'
+import * as app from '@/store/types/app'
+import {sliceArr, uniqueArr} from '@/utils/utils'
+import {Row, Col} from 'iview'
+import MemberList from './member-list'
 
 export default {
-  name: 'BlockGroup',
-  mixins: [ mixin ],
+  name: 'GroupMemberWrap',
+  mixins: [ mixin, addTemp ],
+  components: {
+    MemberList
+  },
   props: {
     memberList: Array
   },
   data () {
     return {
-      activeIndex: '',
       msId: '',
       memberListShow: true,
-      isSingleCalling: false
+      nowSelectedSingleCallGid: '',
+      rowMemberList: [],
+      rowTempMemberList: [],
+      colNum: 8,
+      gutter: 16
     }
   },
   computed: {
-    selectedMemberList () {
-      let memberList = this.$store.getters.memberList
-      let selectedId = this.$store.getters.openGroup[0]
-      return memberList[selectedId]
-    },
     tempList () {
       let list = this.$store.getters.groupTempList
       return list
+    },
+    tempGroupInfo () {
+      return this.$store.getters.tempGroupInfo
     }
   },
+  mounted() {
+    this.setColNum()
+
+    window.addEventListener('resize', () => {
+      this.setColNum()
+    })
+  },
   methods: {
-    creatSingleGroup (item, index) {
-      this.activeIndex = index
-      let groupName = this.$store.getters.userInfo.pttGroup
-      if (this.msId === item.cid) {
-        this.messageAlert('error', '您不能与自己创建单呼')
-        this.$store.commit(types.SetNowStatus, `当前所在群组${groupName}`)
+    setColNum () {
+      if (document.body.clientWidth <= 1500) {
+        this.colNum = 4
+      } else if (document.body.clientWidth > 1500 && document.body.clientWidth <= 1800) {
+        this.colNum = 6
       } else {
-          if (!this.isSingleCalling) {
-            this.isSingleCalling = true
-            this.$store.dispatch(types.CreatTempGroup).then(() => {
-              this.$store.commit(types.SetNowStatus, `当前所在群组${groupName}&&正在与${item.name}创建单呼...`)
-              this.messageAlert('success', '创建单呼成功')
-              this.$emit('on-single-call', item.name)
-              // 如果有临时群组发解除临时群组指令
-              if (this.$store.getters.groupTempList.length) {
-                this.$store.dispatch(types.RemoveTempGroup).then(() => {
-                  this.$emit('on-quit')
-              })
-            }
-          })
-        } else {
-          this.activeIndex = ''
-          this.$store.dispatch(types.RemoveTempGroup).then(() => {
-            this.$store.commit(types.SetNowStatus, `当前所在群组${groupName}`)
-            this.messageAlert('success', '单呼取消成功')
-          })
-        }
+        this.colNum = 8
+      }
+    },
+    creatSingleGroup (item) {
+      if (this.$store.getters.singleCallActiveCid !== item.cid) {
+        this.$store.commit(types.SetSingleCallActiveCid, item.cid)
+        this.toCreatTempGroup({tempInfo: '', creatType: 'SINGLE_TEMP_GROUP'})
+      } else if (!this.activeCid) {
+        this.handleClose({creatType: 'SINGLE_TEMP_GROUP'})
+        this.$store.commit(types.SetSingleCallActiveCid, '')
+      } else {
+        this.$store.commit(app.SetAppLoading, false)
       }
     },
     myselfStyl () {
       let id = this.$store.getters.userInfo.msId
       this.msId = id
+    },
+    justifyType (index) {
+     return index === (this.rowMemberList.length - 1) ? 'start' : 'space-between'
+    },
+    initMemberList (list, bool) {
+      this.memberListShow = bool
+      this.myselfStyl()
+      return sliceArr(list, this.colNum) 
+    },
+    renderMemberList ({memberList, isMemberListShow, type}) {
+      if (!memberList || !memberList.length) {
+        this.memberListShow = isMemberListShow
+      } else {
+        if (type === 'temp') {
+          this.rowTempMemberList = this.initMemberList(memberList, !isMemberListShow)
+        } else {
+          this.rowMemberList = this.initMemberList(memberList, !isMemberListShow)
+        }
+      }
     }
   },
   watch: {
-    selectedMemberList () {
-      this.myselfStyl()
-    },
     memberList (val) {
-      if (!val.length) {
-        this.memberListShow = false
-      } else {
-        this.memberListShow = true
-        this.activeIndex = ''
+      let list = uniqueArr(val, 'cid')
+      this.renderMemberList({memberList: list, isMemberListShow: false})
+    },
+    tempList (newList, oldList) {
+      if (!this.$store.getters.singleCallActiveCid) {
+        this.renderMemberList({memberList: newList, isMemberListShow: true, type: 'temp'})
       }
     },
-    tempList (val) {
-      if (val.length > 0) {
-        this.activeIndex = ''
-        this.memberListShow = false
-        this.myselfStyl()
+    colNum (val) {
+      if (this.memberListShow) {
+        this.renderMemberList({memberList: this.memberList, isMemberListShow: false})
       } else {
-        this.memberListShow = true
+        this.renderMemberList({memberList: this.tempList, isMemberListShow: true, type: 'temp'})
       }
+    },
+    tempGroupInfo (newVal, oldVal) {
+      if (!newVal && oldVal.type !== 0) {
+        this.renderMemberList({memberList: this.memberList, isMemberListShow: false})
+      } 
     }
   }
 }
@@ -129,18 +139,17 @@ export default {
   .group-member-wrap
     background $color-theme
     height 100%
-    padding 36px 26px
+    padding 36px 40px
     overflow-y auto
     .member-item
-      width 110px
-      height 74px
       box-shadow 0 0 3px 5px rgba(100, 139, 149, .2)
       border-radius 8px
       background #ffffff
-      margin-right 20px
       margin-bottom 20px
+      padding-bottom 14px
       text-align center
       cursor pointer
+      overflow hidden
       .myself-icon
         top 6px
         right 10px
@@ -155,4 +164,8 @@ export default {
       &.myself
         background $color-sub-theme
         border 1px solid $color-sub-theme-border
+  .slider-in-active, .slider-out-active
+    transition all 0.8s ease 
+  .slider-in-enter, .slider-out-active
+    transform translateY(300px)
 </style>

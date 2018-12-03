@@ -4,7 +4,7 @@
           <img src="../../../assets/kirisun.png" alt="" class="logo">
         </div>
         <div class="login-box-wrap flex align-center justify-center">
-          <div class="login-box">
+          <div class="login-box pr">
             <i-form :model="loginItem" class="iform" :rules="ruleInline" ref="loginItem">
               <form-item prop="language" class="top-item flex">
                 <radio-group v-model="loginItem.language">
@@ -16,6 +16,7 @@
               <div class="title">
                 Poc Dispatcher
               </div>
+              <Alert type="error" show-icon closable class="form-item pa error-tips" v-if="userError">{{errorMessage}}</Alert>
               <form-item prop="user" class="form-item">
                 <i-input type="text" v-model="loginItem.user" placeholder="user" class="inp" size="large">
                   <i-icon type='ios-person-outline' slot="prepend" size='22'></i-icon>
@@ -28,7 +29,7 @@
               </form-item>
               <div class="forget flex">Forget the password?</div>
               <form-item class="btn-item">
-                <i-button shape="circle" class="btn" @click="handleSubmit('loginItem')">Login</i-button>
+                <i-button shape="circle" class="btn" :loading="isLoading" @click="handleSubmit('loginItem')">Login</i-button>
               </form-item>
             </i-form>
             <p>Fujian Kirisun Communications Co,Ltd V.1.0</p>
@@ -39,10 +40,11 @@
 
 <script>
 import {Form, Radio, Input, Icon, Button, FormItem, RadioGroup} from 'iview'
-import { login, webSocket } from '@/libs/webDispatcher-sdk.js'
+import { login, token } from '@/libs/webDispatcher-sdk.js'
 import { CALLBACK_CODE } from '@/sdkJs/apiCode'
 import Storage from '@/utils/localStorage'
 import * as types from '@/store/types/user'
+import * as app from '@/store/types/app'
 // import * as sRecord from '@/libs/record'
 // console.log(sRecord)
 
@@ -58,7 +60,30 @@ export default {
     'radio-group': RadioGroup
   },
   data () {
+    const validateUser = (rule, value, callback) => {
+      this.userError = false
+      if (!value) {
+        return callback(new Error('用户名不能为空')) 
+      } else if (value.length !== 11) {
+        return callback(new Error('用户名为11位字符串'))
+      } else {
+        callback()
+      }
+    }
+
+    const validatePass = (rule, value, callback) => {
+      if (!value) {
+        return callback(new Error('请输入密码')) 
+      } else if (value.length !==6) {
+        return callback(new Error('密码长度为6'))
+      } else {
+        callback()
+      }
+    }
     return {
+      isLoading: false,
+      userError: false,
+      errorMessage: '',
       loginItem: {
         language: 'Chinese',
         user: '',
@@ -67,16 +92,18 @@ export default {
       },
       ruleInline: {
         user: [
-          { required: true, message: 'Please fill in the user name', trigger: 'blur' }
+          { validator: validateUser, trigger: 'blur' }
         ],
         password: [
-          { required: true, message: 'Please fill in the password.', trigger: 'blur' },
-          { type: 'string', min: 6, message: 'The password length cannot be less than 6 bits', trigger: 'blur' }
+          { validator: validatePass, trigger: 'blur' }
         ]
       }
     }
   },
   mounted () {
+    document.onkeydown = (ev) => {
+      this.enterHandleSubmit(ev)
+    }
   },
   methods: {
     handleSubmit (name) {
@@ -84,21 +111,44 @@ export default {
         if (valid) {
           let account = this.loginItem.user
           let password = this.loginItem.password
-
-          login(account, password, (res) => {
-            if (res && res.code === CALLBACK_CODE) {
-              Storage.localSet('token', res)
-              console.log(webSocket)
-              // let userInfo = `${res.msName}[${res.pttGroup}]`
-              this.$store.commit(types.SetMySocket, webSocket)
-              this.$store.commit(types.SetUserInfo, res)
-              this.$router.replace({name: 'home', params: res})
+          this.isLoading = true
+          this.$store.dispatch(types.GetUserInfo, {account, password}).then((code) => {
+            this.isLoading = false
+            if (code === 0) {
+              this.$store.commit(types.SetLanguage, this.loginItem.language)
+              console.log(7787878787)
+              this.$store.commit(app.SetReFreshPage, true)
+              this.$router.replace({name: 'home'})
+            } else {
+              console.log(code)
+              this.userError = true
+              this.getUserErrorTip(code)
             }
           })
-        } else {
-          this.$Message.error('Fail!')
         }
       })
+    },
+    getUserErrorTip (code) {
+      const message = {
+        1: '终端ID错误',
+        2: '密码不正确',
+        3: '没有默认群组',
+        4: '账号被禁用',
+        5: '在线到达上限，限制登录',
+        6: '账号类型错误',
+        '101': '系统繁忙',
+        '102': '用户认证失败',
+        '103': '用户没有注册',
+        '104': '参数错误',
+        '107': '没有权限操作'
+      }
+
+      this.errorMessage = message[code]
+    },
+    enterHandleSubmit (ev) {
+      if (ev.code === 'Enter') {
+        this.handleSubmit('loginItem')
+      }
     }
   }
 }
@@ -118,11 +168,12 @@ export default {
     flex 1
   .login-box
     width 600px
-    height 400px
     border-radius 6px
     background rgba(255, 255, 255, .1)
     margin-top -80px
+    padding-bottom 20px
     box-shadow 20px 20px 80px rgba(5, 30, 54, 0.1)
+    transition all .4s
     .iform
       color #ffffff
       padding 20px 30px
@@ -134,13 +185,22 @@ export default {
         font-size 36px
         color #fefefe
         text-align center
-        margin-bottom 30px
+        margin-bottom 50px
         font-weight bold
         -webkit-box-reflect below 1px -webkit-gradient(linear, 0 -8, 0 100%, from(transparent), color-stop(.5, transparent), to(rgba(245, 245, 245, .1)))
       .form-item
         margin 0 auto 24px auto
         display block
         width 300px
+        &.error-tips
+          left 50%
+          transform translateX(-50%)
+          top 120px
+          font-size 12px
+          height 30px
+          line-height 10px
+          .ivu-alert-close .ivu-icon-ios-close
+            top 0px
       .inp
         height 36px
         border-radius 36px
