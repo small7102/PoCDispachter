@@ -35,7 +35,7 @@ export default {
       return new Promise((resolve) => {
         login(account, password, (res) => {
           if (res && res.code === 0 && res.msType === '20') {
-            Storage.localSet('token', token)
+            Storage.sessionSet('token', token)
             Storage.sessionSet('user', {account, password})
             commit(types.SetUserInfo, res)
             resolve(0)

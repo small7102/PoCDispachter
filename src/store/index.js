@@ -3,6 +3,7 @@ import Vuex from 'vuex'
 import user from './modules/user'
 import group from './modules/group'
 import app from './modules/app'
+import map from './modules/map'
 
 Vue.use(Vuex)
 
@@ -11,6 +12,7 @@ export default new Vuex.Store({
   modules: {
     app,
     user,
-    group
+    group,
+    map
   }
 })

@@ -4,7 +4,7 @@
         <p slot="title" class="title">
            最近群组
         </p>
-        <i-button class="btn btn-item">
+        <i-button class="btn btn-item" @click="createRecentTempGroup">
           最近群组
         </i-button>
     </card>
@@ -49,7 +49,7 @@
 import { Card, Button } from 'iview'
 import Storage from '@/utils/localStorage'
 import * as types from '@/store/types/group'
-import mx from './mixin'
+import addTemp from '@/store/mixins/createTempGroup'
 import {debounce} from '@/utils/utils'
 
 export default {
@@ -58,11 +58,19 @@ export default {
     'Card': Card,
     'i-button': Button
   },
-  mixins: [mx],
+  mixins: [addTemp],
   computed: {
-    tempGroupList () {
-      let list = this.$store.getters.tempGroupList
-      return list
+    tempGroupList: {
+      get () {
+        let list = this.$store.getters.tempGroupList
+        return list
+      },
+      set (val) {
+        this.$store.commit(types.SetTempGroupList, val)
+      }
+    },
+    userId () {
+      return this.$store.getters.userInfo.msId
     }
   },
   data () {
@@ -74,22 +82,27 @@ export default {
   methods: {
     deleteTempGroup (item, index) {
       this.deleteItem = item
-      let list = [...this.$store.getters.tempGroupList]
+      let list = [...this.tempGroupList]
       list.splice(index, 1)
-      this.$store.commit(types.SetTempGroupList, list)
+      this.tempGroupList = list
       let myTempInfo = Storage.localGet('myTempInfo')
-      let user = this.$store.getters.userInfo.msId
 
-      myTempInfo[user] = list
+      myTempInfo[this.userId] = list
       Storage.localSet('myTempInfo', myTempInfo)
     },
     deleteAllTempGroup () {
-      this.$store.commit(types.SetTempGroupList, [])
+      this.tempGroupList = list
       Storage.localSet('myTempInfo', null)
     },
     selectTempGroup (item) {
       this.$store.commit(types.SetTreeGroupSelectedList, item.cids)
       this.toCreatTempGroup({tempInfo: item, creatType: 'TEMP_GROUP'})
+    },
+    createRecentTempGroup () {
+      let myRecentTempInfo = Storage.localGet('myRecentTempInfo')
+      let tempInfo = myRecentTempInfo[this.userId]
+      this.$store.commit(types.SetTreeGroupSelectedList, tempInfo.cids)
+      this.toCreatTempGroup({tempInfo, creatType: 'TEMP_GROUP'})
     }
   }
 }

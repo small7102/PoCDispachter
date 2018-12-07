@@ -19,7 +19,7 @@
 
 <script>
 import mixin from '@/store/mixins/mixin'
-import addTemp from './mixin'
+import addTemp from '@/store/mixins/createTempGroup'
 import * as types from '@/store/types/group'
 import * as app from '@/store/types/app'
 import {sliceArr, uniqueArr} from '@/utils/utils'
@@ -51,8 +51,21 @@ export default {
       let list = this.$store.getters.groupTempList
       return list
     },
-    tempGroupInfo () {
-      return this.$store.getters.tempGroupInfo
+    tempGroupInfo: {
+      get () {
+        return this.$store.getters.tempGroupInfo
+      },
+      set (val) {
+        this.$store.commit(types.SetTempGroupInfo, val)
+      }
+    },
+    singleCallActiveCid: {
+      get () {
+        return this.$store.getters.singleCallActiveCid
+      },
+      set (val) {
+        this.$store.commit(types.SetSingleCallActiveCid, val)
+      }
     }
   },
   mounted() {
@@ -73,12 +86,12 @@ export default {
       }
     },
     creatSingleGroup (item) {
-      if (this.$store.getters.singleCallActiveCid !== item.cid) {
-        this.$store.commit(types.SetSingleCallActiveCid, item.cid)
+      if (this.singleCallActiveCid !== item.cid) {
+        this.singleCallActiveCid = item.cid
         this.toCreatTempGroup({tempInfo: '', creatType: 'SINGLE_TEMP_GROUP'})
       } else if (!this.activeCid) {
         this.handleClose({creatType: 'SINGLE_TEMP_GROUP'})
-        this.$store.commit(types.SetSingleCallActiveCid, '')
+        this.singleCallActiveCid = ''
       } else {
         this.$store.commit(app.SetAppLoading, false)
       }
@@ -113,7 +126,7 @@ export default {
       this.renderMemberList({memberList: list, isMemberListShow: false})
     },
     tempList (newList, oldList) {
-      if (!this.$store.getters.singleCallActiveCid) {
+      if (!this.singleCallActiveCid || !this.singleCallActiveCid.length) {
         this.renderMemberList({memberList: newList, isMemberListShow: true, type: 'temp'})
       }
     },

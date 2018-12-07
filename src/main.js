@@ -8,16 +8,16 @@ import { Button, Layout, Content, Header, Footer, Sider, Icon, Form, Input, Menu
 import 'iview/dist/styles/iview.css'
 import '@/assets/styles/index.styl'
 
-const VueGoogleMaps = require('vue2-google-maps');
+// const VueGoogleMaps = require('vue2-google-maps');
 
-Vue.use(VueGoogleMaps, {
-  load: {
-    key: 'AIzaSyBAOBjG5ffPH5H6a-8QDlwm7t1L5snOjzU',
-    v: '3.exp',
-    installComponents: false,
-    libraries: 'places'
-  }
-})
+// Vue.use(VueGoogleMaps, {
+//   load: {
+//     key: 'AIzaSyBAOBjG5ffPH5H6a-8QDlwm7t1L5snOjzU',
+//     v: '3.exp',
+//     installComponents: false,
+//     libraries: 'places'
+//   }
+// })
 // AMap.initAMapApiLoader({
 //   key: '688cc2b560762ab60c38207623d82b79',
 //   plugin: ['AMap.Scale', 'AMap.OverView', 'AMap.ToolBar', 'AMap.MapType']

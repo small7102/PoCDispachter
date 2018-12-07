@@ -44,7 +44,6 @@ export default {
       state.settingItems = obj
     },
     [types.SetReFreshPage] (state, bool) {
-      console.log(bool)
       state.isRefreshPage = bool
     }
   }

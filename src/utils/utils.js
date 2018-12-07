@@ -108,7 +108,8 @@ export function getTreeList (list, fid, result = []) {
 */
 
 export function uniqueArr (list, pkey) {
-  if (!list || !Array.isArray(list) || list.length < 1) return
+  if (!list || !Array.isArray(list)) return
+  if (list.length <= 1) return list
   let key = pkey || 'normal'
 
   let res = []

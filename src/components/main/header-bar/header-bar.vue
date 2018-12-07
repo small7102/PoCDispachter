@@ -68,7 +68,7 @@ export default {
   },
   methods: {
     quitLogin () {
-      Storage.localRemove('token')
+      Storage.sessionRemove('token')
       window.location.reload()
     },
     openSettingModal () {

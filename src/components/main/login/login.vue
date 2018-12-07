@@ -116,7 +116,6 @@ export default {
             this.isLoading = false
             if (code === 0) {
               this.$store.commit(types.SetLanguage, this.loginItem.language)
-              console.log(7787878787)
               this.$store.commit(app.SetReFreshPage, true)
               this.$router.replace({name: 'home'})
             } else {

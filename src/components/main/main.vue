@@ -50,6 +50,7 @@ import Tabs from './tabs'
 import * as types from '@/store/types/group'
 import * as app from '@/store/types/app'
 import * as user from '@/store/types/user'
+import * as map from '@/store/types/map'
 import Toast from '@/components/base/toast'
 import {receiveNotice, queryTempGroup, webSocket, receiveVoice, saveVoice, receiveSMS, receiveGPS} from '@/libs/webDispatcher-sdk.js'
 import codeConfig  from '@/libs/codeConfig'
@@ -57,7 +58,7 @@ import mixin from '@/store/mixins/mixin'
 import pttMixin from './pttMixin'
 import Loading from '@/components/base/loading'
 import SmallLoading from '@/components/base/small-loading'
-import {filterObjArrByKey, deepClone, dateFmt, throttle} from '@/utils/utils'
+import {filterObjArrByKey, deepClone, dateFmt, throttle, uniqueArr} from '@/utils/utils'
 import Storage from '@/utils/localStorage'
 import Ptt from './ptt'
 import language from '@/libs/language'
@@ -66,6 +67,7 @@ import SearchGroup from './search-group'
 
 const SOMEONE_ELSE = 1
 const MYSELF = 0
+const DEVICE_MAX_OFFSET = 0.0001
 
 export default {
   name: 'Main',
@@ -79,10 +81,6 @@ export default {
     },
     isRecording () {
       return this.$store.getters.isRecording
-    },
-    isRefreshPage () {
-      console.log(this.$store.getters.isRefreshPage)
-      return this.$store.getters.isRefreshPage
     }
   },
   components: {
@@ -125,7 +123,7 @@ export default {
           this.receiveSMSCallback(res)
         })
         receiveGPS(res => {
-          console.log(res)
+          this.receiveGPSCallback(res)
         })
 
         this.storeMyself()
@@ -207,7 +205,8 @@ export default {
             break
           case codeConfig.repeatLoginNotice: // 重复登录
             this.messageAlert('warning', `${language[this.languageType].main.repeatLoginNotice}`)
-            window.location.reload()
+            webSocket.close()
+            this.$router.replace({name: 'login'})
             break
           case codeConfig.creatTempGroupNotice: // 创建临时群组
             this.$store.dispatch(types.GetTempGroupInfo, '临时群组')
@@ -226,6 +225,22 @@ export default {
             break
           default:
             break
+        }
+      }
+    },
+    receiveGPSCallback (res) {
+      if (res) {
+        let itemIndex
+        let GPSList = [...this.$store.getters.GPSList]
+        let hasItem = GPSList.some((item, index) => {
+          return res.mid === item.mid && Math.abs(res.lat - item.lat) < DEVICE_MAX_OFFSET && Math.abs(res.lng - item.lng) < DEVICE_MAX_OFFSET
+        })
+
+        if (!hasItem) {
+          GPSList.unshift(res)
+          GPSList = uniqueArr(GPSList, 'mid')
+          console.log('我变化了', res.mid, GPSList)
+          this.$store.commit(map.SetGPSList, GPSList)
         }
       }
     },
@@ -306,12 +321,6 @@ export default {
       } else {
         clearTimeout(timer)
         document.disabled = false
-      }
-    },
-    isRefreshPage (newVal, oldVal) {
-      console.log(newVal, oldVal)
-      if (newVal && !oldVal) {
-        this.initData()
       }
     }
   }

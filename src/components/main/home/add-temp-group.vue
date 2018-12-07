@@ -57,19 +57,23 @@ import * as types from '@/store/types/group'
 import * as app from '@/store/types/app'
 import mixin from '@/store/mixins/mixin'
 import Storage from '@/utils/localStorage'
-import mx from './mixin'
+import addTemp from '@/store/mixins/createTempGroup'
 import { token } from '@/libs/webDispatcher-sdk.js'
 
 export default {
   name: 'AddTempGroup',
-  mixins: [mixin, mx],
+  mixins: [mixin, addTemp],
   props: {
     tempGroup: Object
   },
   computed: {
-    tempGroupInfo () {
-      console.log(this.$store.getters.tempGroupInfo)
-      return this.$store.getters.tempGroupInfo
+    tempGroupInfo: {
+      get () {
+        return this.$store.getters.tempGroupInfo
+      },
+      set (val) {
+        this.$store.commit(types.SetTempGroupInfo, val)
+      }
     }
   },
   data () {
@@ -112,15 +116,15 @@ export default {
           let myTempInfo = Storage.localGet('myTempInfo') || {}
           let user = this.$store.getters.userInfo.msId
           if (!myTempInfo[user]) myTempInfo[user] = []
-          let obj = {...this.$store.getters.tempGroupInfo, name: this.formInline.name, id: (new Date()).valueOf()}
+          let obj = {...this.tempGroupInfo, name: this.formInline.name, id: (new Date()).valueOf()}
           myTempInfo[user].push(obj)
 
           // 临时群组存到本地
           Storage.localSet('myTempInfo', myTempInfo)
           // 修改展示数据
+          this.tempGroupInfo = obj
           this.$store.commit(types.SetNowStatus, `当前在${obj.name}临时群组`)
           this.$store.commit(types.SetTempGroupList, myTempInfo[user])
-          this.$store.commit(types.SetTempGroupInfo, obj)
           this.isModalShow = false
           this.hasCreatedTempGroupSuccess = true
           this.formInline.name = ''

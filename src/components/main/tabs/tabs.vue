@@ -86,15 +86,18 @@ export default {
     overflow hidden
     span
       width 180px
-    &.router-link-active
-      background $color-theme-weight-d
-      color #ffffff
-    .right-arrow
-      transform translateY(30px)
-      transition all .1s
     &:hover
       color rgba(255, 255, 255, .9)
       background #3361a4
       .right-arrow
         transform translateY(0)
+    &.router-link-active
+      background $color-theme-weight-d
+      color #ffffff
+      &:hover
+        background $color-theme-weight-d
+        opacity .95
+    .right-arrow
+      transform translateY(30px)
+      transition all .1s
 </style>

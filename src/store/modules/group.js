@@ -2,7 +2,7 @@ import { getGroupsList, getMemberList, createTempGroup, removeTempGroup, token, 
 import * as types from '../types/group'
 import * as appTypes from '../types/app'
 import {getTrees, uniqueArr, upOnline, filterObjArrByKey} from '@/utils/utils'
-import app from './app'
+import map from './map'
 import {Member, TempGroupInfo} from '@/libs/dom'
 
 export default {
@@ -147,31 +147,17 @@ export default {
         await dispatch(types.GetMemberList, {list, i})
       }
     },
-    [types.CreatTempGroup] ({commit, state}) {
+    [types.CreatTempGroup] ({commit, state}, {cids, cidsLength, cidsString}) {
       commit(appTypes.SetAppLoading, true)
-      let list
-      if (state.singleCallActiveCid && !state.treeGroupSelectedList.length) {
-        list = state.singleCallActiveCid
-      } else {
-        list = state.treeGroupSelectedList
-        commit(types.SetSingleCallActiveCid, '')
-      }
-      let listString = typeof list === 'string' ? list : list.join(',')
       return new Promise((resolve, reject) => {
-        if (!list || (Array.isArray(list) && !list.length)) {
-          resolve({code: 0})
-          return
-        }
-
-        let length = typeof list === 'string' ? 1 : list.length
-        createTempGroup(length, listString, res => {
+        createTempGroup(cidsLength, cidsString, res => {
           if (res && res.code === 0) {
-            let selectMembers = filterObjArrByKey(list, state.memberList, 'cid')
+            let selectMembers = filterObjArrByKey(cids, state.memberList, 'cid')
             selectMembers.unshift(state.myself)
             selectMembers = uniqueArr(selectMembers, 'cid')
             let code = selectMembers.length === 2 ? 1 : 2
             commit(types.SetGroupTempList, upOnline(selectMembers))
-            resolve({code: code, cids: [...state.treeGroupSelectedList], members: selectMembers})
+            resolve({code: code, cids, members: selectMembers})
             commit(types.SetTempGroupMembers, []) // 清空选择
           } else {
               resolve({code: 4})
