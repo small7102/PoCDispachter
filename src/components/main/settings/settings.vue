@@ -2,42 +2,26 @@
   <div class="settings-wrap">
     <Modal
         v-model="isSettingShow"
-        title="自定义设置"
+        :title="languageCtx.title"
         width="450"
         class-name="vertical-center-modal"
         @on-ok="handleSubmitSettings">
-      <Form :model="settingItems" :label-width="100">
-        <FormItem label="快捷键">
-            <div v-html="settingItems.pttQuickKey.key" 
+      <Form :label-width="100">
+        <FormItem :label="pttQuickKey.label">
+            <div v-html="pttQuickKey.key" 
                 class="quick-key" 
                 @mouseover="isMouseOnQuickKey=true"
                 @mouseleave="isMouseOnQuickKey=false">
             </div>
-            <p class="tip">鼠标放上后，直接按下快捷键</p>
+            <p class="tip" v-html="languageCtx.tip"></p>
         </FormItem>
-        <div class="notice" ><span>开启通知</span></div>
-        <FormItem label="上下线">
-            <i-switch v-model="settingItems.isReceiveOnlineNotice" size="large">
-                <span slot="open">On</span>
-                <span slot="close">Off</span>
-            </i-switch>
-        </FormItem>
-        <FormItem label="切换群组">
-            <i-switch v-model="settingItems.isReceiveSwitchGroupNotice" size="large">
-                <span slot="open">On</span>
-                <span slot="close">Off</span>
-            </i-switch>
-        </FormItem>
-        <FormItem label="退出临时群组">
-            <i-switch v-model="settingItems.isReceiveQuitGroupNotice" size="large">
-                <span slot="open">On</span>
-                <span slot="close">Off</span>
-            </i-switch>
-        </FormItem>
-        <FormItem label="解散临时群组">
-            <i-switch v-model="settingItems.isReceiveCancelGroupNotice" size="large">
-                <span slot="open">On</span>
-                <span slot="close">Off</span>
+        <div class="notice" ><span>{{languageCtx.openNotice.name}}</span></div>
+        <FormItem v-for="(notice, index) in openNotice"
+                  :key="index"
+                  :label="notice.label">
+            <i-switch v-model="notice.val" size="large">
+                <span slot="open"></span>
+                <span slot="close"></span>
             </i-switch>
         </FormItem>
       </Form>
@@ -48,8 +32,9 @@
 <script>
 import {Switch} from 'iview'
 import * as app from '@/store/types/app'
-import {toUpperCaseFirstChar} from '@/utils/utils'
+import {toUpperCaseFirstChar, deepClone} from '@/utils/utils'
 import Storage from '@/utils/localStorage'
+import language from '@/libs/language'
 
 export default {
   name: 'Settings',
@@ -59,33 +44,75 @@ export default {
   computed: {
     isSettingShow: {
       get () {
-        return this.$store.getters.isSettingShow
+        return this.$store.state.app.isSettingShow
       },
       set (val) {
         this.$store.commit(app.SetSettingShow, false)
       }
+    },
+    storeSettingItems: {
+      get () {
+        return this.$store.state.app.settingItems
+      },
+      set (val) {
+        this.$store.commit(app.SetSettingItems, val)
+      }
+    },
+    user () {
+      return this.$store.getters.userInfo
     }
   },
   data () {
     return {
       isMouseOnQuickKey: false,
-      settingItems: null
+      languageCtx: null,
+      pttQuickKey: {label: 'PTT快捷键', keyCode: 32, key: 'Space'},
+      openNotice: [
+        {
+          label: '上线',
+            key: 'onlineNotice',
+            val: true
+          },
+          {
+            key: 'offlineNotice',
+            label: '下线',
+            val: true
+          },
+          {
+            key: 'creatTempGroupNotice',
+            label: '创建临时群组',
+            val: true
+          },
+          {
+            key: 'switchNotice',
+            label: '切换群组',
+            val: true
+          },
+          {
+            key: 'quitTempGroupNotice',
+            label: '退出临时群组',
+            val: true
+          },
+          {
+            key: 'cancelTempGroupNotice',
+            label: '解散临时群组',
+            val: true
+          },
+          {
+            key: 'callsetNotice',
+            label: '通话设置',
+            val: true
+          }
+        ]
     }
   },
   created () {
-    let user = this.$store.getters.userInfo.msId
-    if (Storage.localGet('mySettings') && Storage.localGet('mySettings')[user]) {
-      this.settingItems = Storage.localGet('mySettings')[user]
-    } else {
-      this.settingItems = {
-        pttQuickKey: {keyCode: 32, key: 'Space'},
-        isReceiveOnlineNotice: true,
-        isReceiveSwitchGroupNotice: true,
-        isReceiveQuitGroupNotice: true,
-        isReceiveCancelGroupNotice: true
-      }
-    }
-    this.$store.commit(app.SetSettingItems, {...this.settingItems})
+    this.languageType = this.$store.getters.language
+    this.languageCtx = language[this.languageType].settings
+    this.getLocalSettingItems()
+    this.storeSettingItems = {pttQuickKey: {...this.pttQuickKey}, openNotice: deepClone(this.openNotice)}
+  },
+  mounted () {
 
     this.disableKeys = [27, 112, 116]
     window.addEventListener('keydown', (ev) => {
@@ -98,25 +125,29 @@ export default {
         return false;
       }
     })
+    
   },
   methods: {
     setQuickKey (ev) {
       let key = ev.keyCode !== 32 ? ev.key : 'Space'
       key = toUpperCaseFirstChar(key)
-      let keyObj = {...ev, key: key, keyCode: ev.keyCode}
-      let obj = {...this.settingItems, pttQuickKey: keyObj}
-      this.settingItems = obj
+      this.pttQuickKey = {...this.pttQuickKey, key: key, keyCode: ev.keyCode}
     },
     handleSubmitSettings () {
-      Storage.localRemove('mySettings')
-      let user = this.$store.getters.userInfo.msId
       let mySettings = {}
-      mySettings[user] = this.settingItems
+      mySettings[this.user.msId] = {openNotice: deepClone(this.openNotice), pttQuickKey: {...this.pttQuickKey}}
 
       // 临时群组存到本地
-      console.log(this.settingItems)
+      this.storeSettingItems = mySettings[this.user.msId]
       Storage.localSet('mySettings', mySettings)
-      this.$store.commit(app.SetSettingItems, {...this.settingItems})
+    },
+    getLocalSettingItems () {
+      if (Storage.localGet('mySettings') && Storage.localGet('mySettings')[this.user.msId]) {
+        let localSettingItems = Storage.localGet('mySettings')[this.user.msId]
+        // this.storeSettingItems = settingItems
+        this.pttQuickKey = localSettingItems.pttQuickKey
+        this.openNotice = localSettingItems.openNotice
+      }
     }
   }
 }

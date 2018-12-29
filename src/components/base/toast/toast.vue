@@ -4,6 +4,7 @@
       <div class="toast flex direction-column" :style="{width: width, height: height, borderRadius: borderRadius}">
         <div class="top flex justify-center flex-item align-center">
           <Icon :type="iconType" :size="iconSize" :color="color"></Icon>
+          <slot name="micIcon"></slot>
           <slot name="decorateIcon"></slot>
         </div>
         <slot name="describle"></slot>

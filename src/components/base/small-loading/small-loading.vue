@@ -1,5 +1,5 @@
 <template>
-  <div class="loading-wrap flex align-center justify-center">
+  <div class="loading-wrap flex align-center justify-center" :style="bgStyle">
     <div class="loading">
       <div class="rect1"></div>
       <div class="rect2"></div>
@@ -12,7 +12,17 @@
 
 <script>
 export default {
-  name: 'SmallLoading'
+  name: 'SmallLoading',
+  computed: {
+    bgStyle () {
+      let allMembersObj = this.$store.state.group.allMembersObj
+      if (!allMembersObj) {
+        return {
+          background: 'rgba(255, 255, 255, .9)'
+        }
+      }
+    }
+  }
 }
 </script>
 

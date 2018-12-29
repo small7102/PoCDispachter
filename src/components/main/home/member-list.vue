@@ -2,12 +2,17 @@
     <div class="group-member-list">
         <Row v-for="(row, index) in list" :key="index" type="flex" :gutter="gutter">
           <Col :span="24/colNum" v-for="(col, colIndex) in row" :key="colIndex">
-            <div class="member-item"
+            <div class="member-item pr"
                   :class="{active: col.cid===activeCid, myself: col.cid === msId}"
                   @click="creatSingleGroup(col)">
-              <Icon type="ios-contact" v-if="col.cid === msId" color="#c77453" size="16" class="myself-icon pa"/>
+              <Icon type="ios-contact" v-if="col.cid === msId" color="#c77453" size="14" class="myself-icon pa"/>
+              <span class="close-icon pa" 
+                    v-if="tempGroupInfo && tempGroupInfo.creatType !== 'SINGLE_TEMP_GROUP'"
+                    @click="handleDelMember(col)">
+                <Icon type="md-close" color="rgba(255, 255, 255, .8)" size="12"/>
+              </span>
               <div class="img-wrap flex align-center justify-center">
-                <img :src="iconImg({terminalType: col.type, online: col.online})" alt="">
+                <img :src="iconImg(col)" alt="">
               </div>
             <div class="id" v-html="col.name"></div>
             </div>
@@ -21,6 +26,7 @@ import mixin from '@/store/mixins/mixin'
 import * as app from '@/store/types/app'
 import * as types from '@/store/types/group'
 import {debounce} from '@/utils/utils'
+const DEL_MEMBER = 1
 
 export default {
   name: 'GroupMemberList',
@@ -48,10 +54,14 @@ export default {
   computed: {
     activeCid () {
       return this.$store.getters.singleCallActiveCid
-    }
-  },
-  data() {
-    return {
+    },
+    dragingMember: {
+      get () {
+        return this.$store.state.group.dragingMember
+      },
+      set (val) {
+        this.$store.commit(types.SetDragingMember, val)
+      }
     }
   },
   methods: {
@@ -60,6 +70,18 @@ export default {
         this.$store.commit(app.SetAppLoading, true)
         this.$emit('on-select', item)
       }
+    },
+    handleDelMember (item) {
+      let counts, mids
+        this.$store.dispatch(types.EditTempGroup, {type: DEL_MEMBER, counts: 1, mids: item.cid})
+        .then((res) => {
+          this.messageAlert('success', '移除成功')
+          this.getTempGroupInfo(res, 'TEMP_GROUP')
+        })
+        .catch(error => {
+          console.log(error)
+          this.messageAlert('warning', '移除失败')
+        })
     }
   }
 }
@@ -79,7 +101,6 @@ export default {
       background #ffffff
       text-align center
       cursor pointer
-      overflow hidden
       box-sizing border-box
       transition all .3s
       border 1px solid #ffffff
@@ -87,9 +108,20 @@ export default {
       width 110px
       height 70px
       margin 10px auto
+      overflow hidden
       .myself-icon
-        top 15px
-        right 25px
+        right 5px
+        top 5px
+      .close-icon
+        top 0
+        right 0
+        height 17px
+        width 17px
+        border-bottom-left-radius 10px
+        background rgba(0, 0, 0, .2)
+        text-align center
+        &:hover
+          color rgba(0, 0, 0, .4)
       .img-wrap
         margin 8px auto
         img

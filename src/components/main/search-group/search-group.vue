@@ -1,13 +1,34 @@
 <template>
   <div class="search-wrap">
-    <Input search 
-           placeholder="请输入" 
+    <!-- <Input search 
+           :placeholder="languageCtx.placeholder" 
            class="search-box"
            @on-search="handleSearch" 
            v-model="searchName"
            @on-keydown.stop="forbiddenVoice"
            @on-change="handleChange"
-           @on-blur="handleBlur"/>
+           @on-blur="handleBlur"/> -->
+    <Poptip trigger="focus" title="搜索结果" class="w100" width="240" placement="bottom-start">
+      <Input class="w100 search-box"
+            :autofocus="isAutofocus"
+            v-model="searchName"
+            @on-keydown.stop="forbiddenVoice"
+            @on-change="handleChange"
+            @on-blur="handleBlur"
+            @on-focus="handleFocus"
+            suffix="ios-search"
+            :placeholder="languageCtx.placeholder"/>
+      <div class="content" slot="content">
+        <div class="no-result" v-if="!resultList.length">
+          暂无结果...
+        </div>
+        <div class="result-list scroll-bar" v-else>
+          <div class="item" v-for="item in resultList" :key="item.cid" @click.stop="selectItem(item)">
+            <span>{{item.name}}</span>
+          </div>
+        </div>
+      </div>
+    </Poptip>
   </div>
 </template>
 
@@ -15,67 +36,92 @@
 import {debounce, filterObjArrByKey, getTreeList} from '@/utils/utils'
 import * as types from '@/store/types/group'
 import * as app from '@/store/types/app'
+import language from '@/libs/language'
+
 export default {
   name: 'SearchGroup',
+  computed: {
+    treeGroupSelectedList: {
+      get () {
+        return this.$store.state.group.treeGroupSelectedList
+      },
+      set (val) {
+        this.$store.commit(types.SetTreeGroupSelectedList, val)
+      }
+    }
+  },
   data () {
     return {
-      searchName: ''
+      searchName: '',
+      languageCtx: null,
+      resultList: [],
+      isAutofocus: false
     }
   },
   created () {
-    this.debounceMessageAlert = debounce(this.messageAlert.bind(this, 'warning', '名称不能为空'), 300)
-    this.debounceInput = debounce(this.checkInput.bind(this), 300)
+    this.languageType = this.$store.getters.language
+    this.languageCtx = language[this.languageType].searchGroup
+    this.debounceMessageAlert = debounce(this.messageAlert.bind(this, 'warning', this.languageCtx.noInpWarning), 300)
+    this.debounceInput = debounce(this.checkInput.bind(this), 170)
   },
   methods: {
-    handleSearch () {
-      if (!this.searchName){
-        this.debounceMessageAlert()
-      } else {
-        let nameArr = []
-        nameArr.push(this.searchName)
-        let res = filterObjArrByKey(nameArr, this.$store.getters.memberList, 'name') // 搜索结果
-        if (!res.length) {
-          this.messageAlert('warning', '该终端不存在')
-        } else {
-          this.locationName(res[0])
-        }
-      }
-    },
-    locationName (item) {
-      let openedGroup = []
-      let selectMember = []
-      openedGroup.push(item.grp)
-      selectMember.push(item.cid)
-
+    handleFocus () {
+      let openGroup = []
       let originGroupList = this.$store.getters.originGroupList
-      let groupItem
+
       for (let value of originGroupList) {
-        if (value.gid === item.grp) {
-          groupItem = value
-        }
+        openGroup.push(value.gid)
       }
-      
-      getTreeList(originGroupList, groupItem.fid, openedGroup) // 得到展开群组的gid与它的父级gid组成的数组
-      this.$store.commit(app.SetIsSearch, true)
-      this.$store.commit(types.SetTreeGroupSelectedList, selectMember)
-      this.$store.commit(types.SetOpenGroup, openedGroup)
+      this.$store.commit(types.SetOpenGroup, openGroup)
     },
     handleChange () {
       this.debounceInput()
     },
     checkInput () {
-      if (!this.searchName) {
-        this.$store.commit(types.SetTreeGroupSelectedList, [])
+      this.resultList = []
+      if (this.searchName) {
+        let memberObj = this.$store.state.group.memberList
+        for (let key in memberObj) {
+          for (let value of memberObj[key]) {
+           if (value.name.indexOf(this.searchName) > -1) {
+             this.resultList.push(value)
+           }
+          }
+        }
+      } else {
+        return
       }
     },
     handleBlur () {
-      this.$store.commit(app.SetIsSearch, false)
+      this.searchName = ''
     },
-    forbiddenVoice(){}
+    forbiddenVoice(){},
+    selectItem(item) {
+      let selectMember = [...this.treeGroupSelectedList]
+      selectMember.unshift(item.cid)
+      this.$store.commit(app.SetIsSearch, true)
+      this.treeGroupSelectedList = selectMember
+      this.resultList = []
+    }
   }
 }
 </script>
 
 
 <style lang="stylus" scoped>
+@import '../../../assets/styles/variable.styl';
+
+  .search-box
+    width 240px
+    line-height 36px
+  .result-list
+    max-height 340px
+    overflow auto
+    padding-right 5px
+    .item
+      line-height 30px
+      padding-left 5px
+      cursor pointer
+      &:hover
+        background $color-theme-light-ll
 </style>

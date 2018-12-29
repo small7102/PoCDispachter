@@ -44,6 +44,10 @@ const devWebpackConfig = merge(baseWebpackConfig, {
       poll: config.dev.poll,
     }
   },
+  externals: {
+      // .. other externals if any
+      'vuejs-dialog': 'VuejsDialog'
+  },
   plugins: [
     new webpack.DefinePlugin({
       'process.env': require('../config/dev.env')

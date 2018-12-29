@@ -10,15 +10,33 @@ export class Member {
 }
 
 export class TempGroupInfo {
-  constructor ({name, type, length, id, cids = [], creatType, creater, onlineLength}) {
-    this.name = name
+  constructor ({name, type, length = 0, id, cids = [], creatType, creater, onlineLength = 0}) {
+    this.name = name || '无'
     this.type = type
     this.length = length
-    this.id = id
+    this.id = id || '7878787878'
     this.cids = cids
     this.creatType = creatType,
     this.creater = creater
     this.onlineLength = onlineLength
+    console.log(this)
+  }
+
+  someoneOnline () {
+    this.length += 1
+    return this
+  }
+
+  someoneOffline () {
+    this.length = this.length >= 1 ? this.length - 1 : 0
+    return this
+  }
+
+  quitTempGroup (callback) {
+    this.length = this.length >= 1 ? this.length - 1 : 0
+    // if (item.online === 1) this.onlineLength -= 1
+    if (callback && typeof callback === 'function') callback()
+    return this
   }
 }
 

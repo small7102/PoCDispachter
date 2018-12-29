@@ -11,18 +11,12 @@ export default {
   mixins: [pttMixin],
   computed: {
     settingItems () {
-      let res = this.$store.getters.settingItems
-      return res
+      return this.$store.state.app.settingItems
     }
   },
   data () {
     return {
       quickKey: 'Space'
-    }
-  },
-  methods: {
-    _handleStartPtt() {
-      console.log(123)
     }
   }
 }

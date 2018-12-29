@@ -52,6 +52,23 @@ const router = new Router({
           component: () => import('@/components/main/map-monitoring')
         }
       ]
+    },
+    {
+      path: '/logs',
+      name: 'logs',
+      component: Main,
+      children: [
+        {
+          path: '/log',
+          name: 'log',
+          meta: {
+            hideInMenu: true,
+            title: '日志',
+            notCache: true
+          },
+          component: () => import('@/components/main/log')
+        }
+      ]
     }
   ]
 })
@@ -59,9 +76,7 @@ const router = new Router({
 const LOGIN_PAGE_NAME = 'login'
 
 router.beforeEach((to, from, next) => {
-  // Storage.localRemove('token')
   const token = Storage.sessionGet('token')
-  // console.log('我是这个',token, from.name)
   if (!token && to.name !== LOGIN_PAGE_NAME) {
     // 未登录且要跳转的页面不是登录G页
     next({
@@ -71,14 +86,14 @@ router.beforeEach((to, from, next) => {
     next()
   } else if (token && to.name === LOGIN_PAGE_NAME) {
     next()
-  } else if (token && to.name !== LOGIN_PAGE_NAME){
-    store.commit('groupType/SetTreeGroupSelectedList',[])
-    store.commit('groupType/SetSingleCallActiveCid',[])
+  } else if (token && to.name !== LOGIN_PAGE_NAME) {
+    store.commit('groupType/SetTreeGroupSelectedList', [])
+    store.commit('groupType/SetSingleCallActiveCid', [])
     if (!store.getters.tempGroupInfo) {
-      store.commit('map/SetMapTempMemberList',[])
+      store.commit('map/SetMapTempMemberList', [])
     }
-    if (from.path === "/") {
-      store.dispatch('user/GetUserInfo', Storage.sessionGet('user')).then((res)=>{
+    if (from.path === '/') {
+      store.dispatch('user/GetUserInfo', Storage.sessionGet('user')).then(res => {
         store.commit('app/SetReFreshPage', true)
         next()
       })

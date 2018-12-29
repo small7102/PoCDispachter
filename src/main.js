@@ -4,25 +4,15 @@ import App from './App'
 import router from './router'
 import store from './store'
 import { Button, Layout, Content, Header, Footer, Sider, Icon, Form, Input, Menu, Submenu, Checkbox, CheckboxGroup, Modal, Message,
-  FormItem, Alert, Row, Col, Spin, Grid, Avatar, Card, Scroll, Poptip, Notice, Switch } from 'iview'
+  FormItem, Alert, Row, Col, Spin, Grid, Avatar, Card, Scroll, Poptip, Notice, Switch, Tabs, Table, TabPane, RadioGroup, Radio, 
+  DropdownMenu, Dropdown, DropdownItem, Tooltip } from 'iview'
 import 'iview/dist/styles/iview.css'
 import '@/assets/styles/index.styl'
-
-// const VueGoogleMaps = require('vue2-google-maps');
-
-// Vue.use(VueGoogleMaps, {
-//   load: {
-//     key: 'AIzaSyBAOBjG5ffPH5H6a-8QDlwm7t1L5snOjzU',
-//     v: '3.exp',
-//     installComponents: false,
-//     libraries: 'places'
-//   }
-// })
-// AMap.initAMapApiLoader({
-//   key: '688cc2b560762ab60c38207623d82b79',
-//   plugin: ['AMap.Scale', 'AMap.OverView', 'AMap.ToolBar', 'AMap.MapType']
-// })
-
+// import VuejsDialog from "vuejs-dialog"
+// // import VuejsDialogMixin from 'vuejs-dialog/dist/vuejs-dialog-mixin.min.js'
+// import 'vuejs-dialog/dist/vuejs-dialog.min.css';
+ 
+// Vue.use(VuejsDialog.main.default)
 
 Vue.component('Button', Button)
 Vue.component('Layout', Layout)
@@ -47,7 +37,15 @@ Vue.component('Avatar', Avatar)
 Vue.component('Card', Card)
 Vue.component('Scroll', Scroll)
 Vue.component('Poptip', Poptip)
-Vue.component('Switch', Switch)
+Vue.component('TabPane', TabPane)
+Vue.component('Table', Table)
+Vue.component('Tabs', Tabs)
+Vue.component('RadioGroup', RadioGroup)
+Vue.component('Radio', Radio)
+Vue.component('Dropdown', Dropdown)
+Vue.component('DropdownMenu', DropdownMenu)
+Vue.component('DropdownItem', DropdownItem)
+Vue.component('Tooltip', Tooltip)
 
 Vue.config.productionTip = false
 

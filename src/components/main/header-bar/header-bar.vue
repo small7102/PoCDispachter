@@ -2,30 +2,23 @@
   <div class="header-bar-wrap">
     <div class="top flex align-center between">
       <div class="left flex align-center">
-        <img src="../../../assets/kirisun.png" alt="Poc语音调度系统" class="logo">
-        <h1>PoC语音调度系统</h1>
+        <img src="../../../assets/kirisun.png" :alt="languageCtx.title" class="logo">
+        <h1>{{languageCtx.title}}</h1>
       </div>
       <div class="right">
-        <span class="quit" @click="quitLogin">[退出]</span>
+        <span class="quit" @click="quitLogin">[{{languageCtx.quitBtnText}}]</span>
         <Icon type="ios-settings-outline" size="20" class="setting" @click="openSettingModal"/>
       </div>
     </div>
     <div class="bottom flex align-center">
       <div class="item b-item">
-        欢迎{{info}}登陆
+        {{languageCtx.loginSuceessInfo}}{{info}}
       </div>
       <div class="item status flex-item">
         {{status}}
       </div>
       <div class="item b-item time-wrap">
         <span v-html="nowTime" class="time"></span>
-        <span class="signal">
-          <i></i>
-          <i></i>
-          <i></i>
-          <i></i>
-          <i></i>
-        </span>
       </div>
     </div>
     <settings/>
@@ -38,6 +31,7 @@ import * as app from '@/store/types/app'
 import {dateFmt} from '@/utils/utils'
 import Settings from '../settings'
 import Storage from '@/utils/localStorage'
+import language from '@/libs/language'
 
 export default {
   name: 'HeaderBar',
@@ -46,7 +40,7 @@ export default {
     info () {
       let userInfo = this.$store.getters.userInfo
       let info = `${userInfo.msName}[${userInfo.pttGroup}]`
-      let state = `当前所在群组${userInfo.pttGroup}`
+      let state = `${this.languageCtx.nowGroup}${userInfo.pttGroup}`
       this.$store.commit(types.SetNowStatus, state)
       return info
     },
@@ -57,8 +51,13 @@ export default {
   },
   data () {
     return {
-      nowTime: ''
+      nowTime: '',
+      languageCtx: null
     }
+  },
+  created() {
+    this.languageType = this.$store.getters.language
+    this.languageCtx = language[this.languageType].header
   },
   mounted () {
     this.nowTime = dateFmt("yyyy/MM/dd hh:mm:ss", new Date())
@@ -117,7 +116,7 @@ export default {
       width 250px
       overflow hidden
       &.time-wrap
-        width auto
+        text-align right
       .time
         width 132px
       .signal

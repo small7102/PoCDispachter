@@ -243,3 +243,27 @@ export function toUpperCaseFirstChar (str) {
 
   return `${firstChar}${elseChar}`
 }
+
+/**
+  * [hasIllegalChar 判断是否含有script非法字符]
+  * @param  {[type]}  str [要判断的字符串]
+  * @return {Boolean}     [true：含有，验证不通过；false:不含有，验证通过]
+*/
+export function hasIllegalChar(str) {
+  return new RegExp(".*?script[^>]*?.*?(<\/.*?script.*?>)*", "ig").test(str);
+}
+
+export function getStrCharLength(str) {
+  if ( str && typeof str !== 'string') return
+  return str.replace(/[^\u0000-\u00ff]/g,"aa").length
+}
+
+export function isInContent (obj, parent) {
+  while (obj && obj.tagName.toUpperCase() !== 'BODY') {
+    if (obj === parent) {
+      return true
+    }
+    obj = obj.parentNode
+  }
+  return false
+}

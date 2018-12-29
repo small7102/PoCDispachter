@@ -1,5 +1,4 @@
 import * as types from '../types/app'
-import Storage from '@/utils/localStorage'
 export default {
   state: {
     isAppLoading: false,
@@ -10,6 +9,9 @@ export default {
     isSearch: false,
     settingItems: null,
     isRefreshPage: false,
+    isRemaindMicroRight: false,
+    microTip: false,
+    pttAble: true
   },
   getters: {
     isAppLoading: state => state.isAppLoading,
@@ -20,6 +22,8 @@ export default {
     isSettingShow: state => state.isSettingShow,
     settingItems: state => state.settingItems,
     isRefreshPage: state => state.isRefreshPage,
+    isRemaindMicroRight: state => state.isRemaindMicroRight,
+    microTip: state => state.microTip
   },
   mutations: {
     [types.SetAppLoading] (state, bool) {
@@ -45,6 +49,15 @@ export default {
     },
     [types.SetReFreshPage] (state, bool) {
       state.isRefreshPage = bool
+    },
+    [types.SetIsRemaindMicroRight] (state, bool) {
+      state.isRemaindMicroRight = bool
+    },
+    [types.SetMicroTip] (state, bool) {
+      state.microTip = bool
+    },
+    [types.SetPttAble] (state, bool) {
+      state.pttAble = bool
     }
   }
 }

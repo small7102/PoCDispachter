@@ -1,9 +1,9 @@
 <template>
-  <div class="voice-wrap h100 pr flex direction-column" ref="scroll">
+  <div class="voice-wrap pr direction-column" ref="scroll">
       <div class="no-voice" v-if="!voiceList.length">
-        暂无消息
+        {{languageCtx.voiceList.noData}}
       </div>
-      <div class="scroll scroll-bar flex-item h100">
+      <div>
         <voice-box
           v-for="(item, index) in voiceList"
           :class="{active: index === playingVoice}"
@@ -14,9 +14,9 @@
           @on-play="playVoice(item, index)"
         />
       </div>
-      <div class="btn-wrap pr">
-        <Button size="small" class="more-btn" shape="circle"><span>更多</span></Button>
-      </div>
+      <!-- <div class="btn-wrap pr">
+        <Button size="small" class="more-btn" shape="circle"><span>{{languageCtx.voiceList.moreData}}</span></Button>
+      </div> -->
   </div>
 </template>
 
@@ -26,9 +26,11 @@ import VoiceBox from '@/components/base/voice-item'
 import * as app from '@/store/types/app'
 import * as types from '@/store/types/group'
 import {dateFmt} from '@/utils/utils'
+import language from './mixin'
 
 export default {
   name: 'VoiceList',
+  mixins: [language],
   components: {VoiceItem, VoiceBox},
   computed: {
     voiceList () {
@@ -45,19 +47,46 @@ export default {
   },
   methods: {
     playVoice (item, index) {
-      if (this.playingVoice !== index) { // 点击播放语音
-        this.playingVoice = index
-        this.playingVoiceTimeDuring = (item.voice.byteLength / 320) * 20
-        this.playWav(item.voice)
-        setTimeout(() => {
-          this.playingVoice = ''
-        }, this.playingVoiceTimeDuring)
-      } else { // 再次点击取消播放
-        this.playingVoice = ''
+      // this.stopPlayVoice(() => {
+      //   if (this.playingVoice !== index) { // 点击播放语音
+      //     this.startPlayVoice(item, index)
+      //   } else { // 再次点击取消播放
+      //     this.stopPlayVoice()
+      //   }
+      // })
+      console.log(this.playingVoice)
+      if (this.playingVoice !== index) {
+        if (this.playingVoice !== null) {
+          this.stopPlayVoice (() => {
+            this.startPlayVoice(item, index)
+          })
+        } else {
+          this.startPlayVoice(item, index)
+        }
+      } else {
+        this.stopPlayVoice ()
+      }
+    },
+    stopPlayVoice (callback) {
+      this.playingVoice = ''
+      if (!this.audioContext) {
+        callback()
+      } else {
+        console.log('关闭语音')
         this.audioContext.close().then(() => {
           this.audioContext = null
+          console.log('关闭了')
+          if (callback) callback()
         })
       }
+    },
+    startPlayVoice (item, index) {
+      this.playingVoice = index
+      this.playingVoiceTimeDuring = (item.voice.byteLength / 320) * 20
+      this.playWav(item.voice)
+      setTimeout(() => {
+        this.playingVoice = ''
+      }, this.playingVoiceTimeDuring)
     },
     getDuring (voice) {
       let byteLength = voice.byteLength
@@ -87,7 +116,7 @@ export default {
   },
   updated() {
     let pttGroup = this.$store.getters.userInfo.pttGroup
-    this.$store.commit(types.SetNowStatus, `当前处于${pttGroup}`)
+    this.$store.commit(types.SetNowStatus, `${this.languageCtx.voiceList.nowAt}${pttGroup}`)
   }
 }
 </script>
@@ -96,9 +125,6 @@ export default {
  @import '../../../assets/styles/variable';
 .voice-wrap
   width 100%
-  overflow hidden
-  .scroll
-    overflow scroll
   .item
     padding 0 10px
     margin-bottom 12px

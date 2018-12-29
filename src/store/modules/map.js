@@ -4,7 +4,8 @@ export default {
   state: {
     GPSList: [],
     mapTempMemberList: [],
-    hasMapTempGroup: false
+    hasMapTempGroup: false,
+    gpsPoint: null
   },
   getters: {
     GPSList: state => state.GPSList,
@@ -20,6 +21,9 @@ export default {
     },
     [map.SetHasMapTempGroup] (state, bool) {
       state.hasMapTempGroup = bool
+    },
+    [map.SetGpsPoint] (state, obj) {
+      state.gpsPoint = obj
     }
   },
   actions: {

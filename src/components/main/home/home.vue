@@ -3,7 +3,7 @@
         <Layout class="h100 direction-row">
           <Content :style="{paddingLeft: '12px'}" class="flex direction-column">
             <div class="con-top">
-              <span>群组</span>
+              <span>{{languageCtx.home.title}}</span>
             </div>
             <Layout :style="{background: '#ffffff'}" class="flex-item h100 direction-row">
               <Content :style="{overflow: 'hidden'}" class="h100">
@@ -37,15 +37,15 @@
             <div class=" flex direction-column h100">
               <Layout class="right-card sms-card">
                 <Header class="card-title">
-                  消息记录
+                  {{languageCtx.home.messageTitle}}
                 </Header>
-                <Content class="h100">
+                <Content class="scroll-bar flex-item content-wrap">
                   <message-list/>
                 </Content>
               </Layout>
               <Layout class="right-card voice-card">
-                <Header  class="card-title">语音记录</Header>
-                <Content class="voice-content h100">
+                <Header  class="card-title">{{languageCtx.home.voiceTitle}}</Header>
+                <Content class="scroll-bar flex-item content-wrap">
                   <voice-list/>
                 </Content>
               </Layout>
@@ -62,9 +62,11 @@ import SendMessage from './send-message'
 import RightSideGroup from './right-side-group'
 import VoiceList from './voice-list'
 import MessageList from './message-list'
+import language from './mixin'
 
 export default {
   name: 'Home',
+  mixins: [language],
   components: {
     BlockGroup,
     GroupMember,
@@ -119,7 +121,6 @@ export default {
       padding 0
     .send-footer
       background #f3f3f3
-      height 80px
       padding 0
     .right-sider-wrap
       background $color-theme
@@ -150,4 +151,7 @@ export default {
         text-overflow ellipsis
         white-space nowrap
         padding 0
+.content-wrap
+  overflow-y scroll
+  padding-bottom 10px
 </style>

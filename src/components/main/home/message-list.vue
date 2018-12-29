@@ -1,9 +1,9 @@
 <template>
-  <div class="message-wrap h100 flex direction-column">
+  <div class="message-wrap">
     <div class="no-message" v-if="!messageList.length">
-      暂无消息
+      {{languageCtx.sendMessage.noMessage}}
     </div>
-    <div class="message-box scroll-bar h100 flex-item">
+    <div class="message-box">
       <div v-for="(item, index) in messageList" :key="index">
         <message-item 
           :time="item.time"
@@ -18,9 +18,11 @@
 
 <script>
 import MessageItem from '@/components/base/message-item'
+import language from './mixin'
 
 export default {
   name: 'MessageList',
+  mixins: [language],
   components: {MessageItem},
   computed: {
     messageList () {
@@ -32,14 +34,10 @@ export default {
 
 <style lang="stylus" scoped>
 .message-wrap
-  margin-top 10px
-  overflow hidden
   &::after
     content ''
     display block
     height 10px
-  .message-box
-    overflow scroll
 .no-message
   text-align center
   line-height 60px

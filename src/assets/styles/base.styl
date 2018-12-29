@@ -5,6 +5,7 @@ body, html
   font-family: 'PingFang SC', 'STHeitiSC-Light', 'Helvetica-Light', arial, sans-serif, 'Droid Sans Fallback'
   tap-highlight-color: transparent
   color: $color-text
+  user-select none
 
 html, body
   background: $color-background
@@ -64,15 +65,27 @@ input:-webkit-autofill, textarea:-webkit-autofill, select:-webkit-autofill
 .direction-row
   flex-direction: row
 
+.amap-marker-label
+  border: 0
+  background-color: transparent
+.marker-info
+  background #ffffff
+  border-radius 3px
+  padding 3px 5px
+  box-shadow 0 0 2px 1px rgba(73, 144, 215, .35)
+
+.tc
+  text-align center
+
 // 滚动条
-.scroll-bar::-webkit-scrollbar, .ivu-scroll-container::-webkit-scrollbar
+.scroll-bar::-webkit-scrollbar, .ivu-scroll-container::-webkit-scrollbar, .ivu-tooltip-inner::-webkit-scrollbar
   width 6px
   height 5px
-.scroll-bar::-webkit-scrollbar-button, .ivu-scroll-container::-webkit-scrollbar-button
+.scroll-bar::-webkit-scrollbar-button, .ivu-scroll-container::-webkit-scrollbar-button, .ivu-tooltip-inner::-webkit-scrollbar
   display none
-.scroll-bar::-webkit-scrollbar-track, .ivu-scroll-container::-webkit-scrollbar-track
+.scroll-bar::-webkit-scrollbar-track, .ivu-scroll-container::-webkit-scrollbar-track, .ivu-tooltip-inner::-webkit-scrollbar
   background #ffffff
-.scroll-bar::-webkit-scrollbar-thumb, .ivu-scroll-container::-webkit-scrollbar-thumb
+.scroll-bar::-webkit-scrollbar-thumb, .ivu-scroll-container::-webkit-scrollbar-thumb, .ivu-tooltip-inner::-webkit-scrollbar
   background #eeeeee
   border-radius 4px
 
@@ -127,7 +140,29 @@ input:-webkit-autofill, textarea:-webkit-autofill, select:-webkit-autofill
 // 间距
 .mt12
   margin-top 12px
+.mt10
+  margin-top 10px
+.mt8
+  margin-top 8px
+.mt6
+  margin-top 6px
+.mt5
+  margin-top 5px
+.mt4
+  margin-top 4px
+.mt3
+  margin-top 3px
+.mt2
+  margin-top 2px
+.mt1
+  margin-top 1px
 
+.f-black
+  color #333333
+
+.modal-title
+  font-size 16px
+  font-weight bold
 
 // 重置Alert, Meaasge样式
 .vertical-center-modal
@@ -153,6 +188,10 @@ input:-webkit-autofill, textarea:-webkit-autofill, select:-webkit-autofill
 .ivu-icon-ios-alert
   font-size 16px
 
+.ivu-tooltip-inner
+  max-height 500px !important
+  overflow-y scroll
+
 // 动画
 .voiceSignal
   .line
@@ -177,3 +216,29 @@ input:-webkit-autofill, textarea:-webkit-autofill, select:-webkit-autofill
       transform: rotate(180deg)
     to
       transform: rotate(360deg)
+
+.slideToggle
+  animation slidetoggle .15s ease-out 1
+
+@keyframes slidetoggle
+    from
+      height 0
+      transform translateY(-20px)
+    to
+      height 150px
+      transform translateY(0)
+
+.shine
+  animation shine 1.5s linear infinite
+
+@keyframes shine
+    from
+      border 3px dashed rgba(255, 255, 255, .4)
+    50%
+      border 3px dashed rgba(255, 255, 255, .1)
+    to
+      border 3px dashed rgba(255, 255, 255, .4)
+
+
+.item
+  position rela

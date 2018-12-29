@@ -1,19 +1,19 @@
 <template>
   <div class="side-group-wrap">
-    <card class="card">
+    <card class="card" :padding="10">
         <p slot="title" class="title">
-           最近群组
+           {{languageCtx.rightGroup.recentGroup}}
         </p>
         <i-button class="btn btn-item" @click="createRecentTempGroup">
-          最近群组
+          {{languageCtx.rightGroup.recentGroup}}
         </i-button>
     </card>
-    <card class="card">
+    <card class="card" :padding="0">
         <p slot="title" class="title">
-           快捷群组
+           {{languageCtx.rightGroup.quickGroup}}
         </p>
-        <template v-if="!tempGroupList.length">
-          <div class="none">暂无快捷群组记录</div>
+        <template v-if="!tempGroupList || !tempGroupList.length">
+          <div class="none quick">{{languageCtx.rightGroup.noGroup}}</div>
         </template>
         <template v-else>
           <div class="temp-list scroll-bar">
@@ -35,10 +35,10 @@
                 v-if="index === activeIndex"/>
             </div>
 
-            <div class="bottom-wrap" @click="deleteAllTempGroup">
-              <Icon type="ios-trash-outline" size="20"/>
-              删除所有
-            </div>
+          </div>
+          <div class="bottom-wrap" @click="deleteAllTempGroup">
+            <Icon type="ios-trash-outline" size="20"/>
+            {{languageCtx.rightGroup.delBtnText}}
           </div>
         </template>
     </card>
@@ -51,6 +51,7 @@ import Storage from '@/utils/localStorage'
 import * as types from '@/store/types/group'
 import addTemp from '@/store/mixins/createTempGroup'
 import {debounce} from '@/utils/utils'
+import language from './mixin'
 
 export default {
   name: 'SideGroup',
@@ -58,7 +59,7 @@ export default {
     'Card': Card,
     'i-button': Button
   },
-  mixins: [addTemp],
+  mixins: [addTemp, language],
   computed: {
     tempGroupList: {
       get () {
@@ -79,30 +80,40 @@ export default {
       deleteItem: ''
     }
   },
+  created () {
+    this.myTempInfo = Storage.localGet('myTempInfo')
+    this.myRecentTempInfo = Storage.localGet('myRecentTempInfo')
+  },
+  mounted () {
+    this.tempGroupList = this.myTempInfo && this.myTempInfo[this.userId]
+    this.recentGroup = this.myRecentTempInfo && this.myRecentTempInfo[this.userId]
+  },
   methods: {
     deleteTempGroup (item, index) {
       this.deleteItem = item
       let list = [...this.tempGroupList]
       list.splice(index, 1)
       this.tempGroupList = list
-      let myTempInfo = Storage.localGet('myTempInfo')
 
-      myTempInfo[this.userId] = list
-      Storage.localSet('myTempInfo', myTempInfo)
+      this.myTempInfo[this.userId] = list
+      Storage.localSet('myTempInfo', this.myTempInfo)
     },
     deleteAllTempGroup () {
-      this.tempGroupList = list
-      Storage.localSet('myTempInfo', null)
+      this.tempGroupList = []
+      this.myTempInfo[this.userId] = null
+      Storage.localSet('myTempInfo', this.myTempInfo)
     },
     selectTempGroup (item) {
-      this.$store.commit(types.SetTreeGroupSelectedList, item.cids)
-      this.toCreatTempGroup({tempInfo: item, creatType: 'TEMP_GROUP'})
+      this.toCreatTempGroup({tempInfo: item, creatType: 'QUICK_TEMP_GROUP', cids: item.cids})
     },
     createRecentTempGroup () {
       let myRecentTempInfo = Storage.localGet('myRecentTempInfo')
       let tempInfo = myRecentTempInfo[this.userId]
-      this.$store.commit(types.SetTreeGroupSelectedList, tempInfo.cids)
-      this.toCreatTempGroup({tempInfo, creatType: 'TEMP_GROUP'})
+      if (tempInfo) {
+        this.toCreatTempGroup({tempInfo, creatType: 'RECENT_TEMP_GROUP', cids: tempInfo.cids})
+      } else {
+        this.messageAlert('warning', this.languageCtx.rightGroup.noRecentGroup)
+      }
     }
   }
 }
@@ -130,12 +141,17 @@ export default {
     cursor pointer
   .none
     text-align center
+    line-height 40px
+    &.quick
+     line-height 60px
   .temp-list
-    max-height 400px
+    max-height 360px
+    overflow-y scroll
+    padding 0 10px
   .bottom-wrap
     text-align center
     font-size $font-size-small
-    margin-top 20px
+    margin 10px auto
     cursor pointer
     transition .2s all
     &:hover

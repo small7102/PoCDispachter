@@ -1,32 +1,36 @@
-import { getGroupsList, getMemberList, createTempGroup, removeTempGroup, token, queryTempGroup, sendSMS } from '@/libs/webDispatcher-sdk.js'
+import { getGroupsList, getMemberList, createTempGroup, removeTempGroup, queryTempGroup, sendSMS, callSet, editTempGroup } from '@/libs/webDispatcher-sdk.js'
 import * as types from '../types/group'
 import * as appTypes from '../types/app'
-import {getTrees, uniqueArr, upOnline, filterObjArrByKey} from '@/utils/utils'
-import map from './map'
-import {Member, TempGroupInfo} from '@/libs/dom'
+import {getTrees, uniqueArr, upOnline} from '@/utils/utils'
 
 export default {
   state: {
     treeGroupList: [],
     originGroupList: [],
     memberList: {},
+    originMembersObj: {},
     homeSelectedGroupId: '',
     openGroup: [],
     tempGroupMembers: [], // 多选框选择是的临时群组成员
     groupTempList: [], // block-member组件要显示的临时群组成员
     selectMemberList: [],
-    tempGroupList: [],//右侧临时群组列表
+    tempGroupList: [], // 右侧临时群组列表
     nowStatus: '',
     myself: {},
     treeGroupSelectedList: [],
     memberlistGetOver: false,
     tempGroupInfo: null,
     singleCallActiveCid: '',
-    messageList: []
+    messageList: [],
+    switchingGroup: null,
+    allMembersObj: null,
+    allGroupsObj: null,
+    dragingMember: null
   },
   getters: {
     originGroupList: state => state.originGroupList,
     memberList: state => state.memberList,
+    originMembersObj: state => state.originMembersObj,
     selectMemberList: state => {
       return state.memberList[state.openGroup[0]]
     },
@@ -48,6 +52,12 @@ export default {
   mutations: {
     [types.SetOriginGroupsList] (state, list) {
       state.originGroupList = list
+    },
+    [types.SetOriginMembersObj] (state, newState) {
+      if (newState) {
+        state.originMembersObj[newState.gid] = newState.item
+      }
+      state.originMembersObj = Object.assign({}, state.originMembersObj)
     },
     [types.SetMemberList] (state, newState) {
       if (newState) {
@@ -93,6 +103,18 @@ export default {
     },
     [types.SetMessageList] (state, list) {
       state.messageList = list
+    },
+    [types.SetSwitchingGroup] (state, item) {
+      state.switchingGroup = item
+    },
+    [types.SetAllMembersObj] (state, obj) {
+      state.allMembersObj = obj
+    },
+    [types.SetAllGroupsObj] (state, obj) {
+      state.allGroupsObj = obj
+    },
+    [types.SetDragingMember] (state, newState) {
+      state.dragingMember = newState
     }
   },
   actions: {
@@ -102,26 +124,13 @@ export default {
       if (result.data && result.data.list) {
         let list = result.data.list
         let i = 0
-        await dispatch(types.GetMemberList, {list: list, i})
+        await dispatch(types.GetOriginMembersObj, {list: list, i})
 
         let newlist = list.map(value => {
           let item = {...value}
           let computedGroup = []
           dispatch(types.FilterUnderGroup, {gid: item.gid, computedGroup, list})
           computedGroup = uniqueArr(computedGroup)
-          let all = 0
-          let onlineNum = 0
-          computedGroup.forEach(item => {
-            all += state.memberList[item].length
-            const onlineList = state.memberList[item].filter(itemOnline => {
-              return itemOnline.online === '1'
-            })
-            onlineNum += onlineList.length
-          })
-
-          item.onlineNum = onlineNum
-          item.all = all
-
           return item
         })
 
@@ -130,7 +139,7 @@ export default {
         commit(types.SetTreeGroupList, newlist)
       }
     },
-    async [types.GetMemberList] ({commit, dispatch}, {list, i}) {
+    async [types.GetOriginMembersObj] ({commit, dispatch}, {list, i}) {
       let result = await getMemberList(list[i].gid)
       if (result.data && result.data.list) {
         let gid = result.data.gid
@@ -138,40 +147,40 @@ export default {
           return item.grp === gid
         })
         let online = upOnline(filterList)
+        commit(types.SetOriginMembersObj, {item: result.data.list, gid: list[i].gid})
         commit(types.SetMemberList, {item: online, gid: list[i].gid})
         i++
-        if (i >= list.length) {
-          commit(types.SetMemberlistGetOver, true)
-          return
-        }
-        await dispatch(types.GetMemberList, {list, i})
+        if (i >= list.length) return
+        await dispatch(types.GetOriginMembersObj, {list, i})
       }
     },
-    [types.CreatTempGroup] ({commit, state}, {cids, cidsLength, cidsString}) {
+    [types.CreatTempGroup] ({commit, dispatch}, { cidsLength, cidsString }) {
       commit(appTypes.SetAppLoading, true)
       return new Promise((resolve, reject) => {
         createTempGroup(cidsLength, cidsString, res => {
+          commit(appTypes.SetAppLoading, false)
           if (res && res.code === 0) {
-            let selectMembers = filterObjArrByKey(cids, state.memberList, 'cid')
-            selectMembers.unshift(state.myself)
-            selectMembers = uniqueArr(selectMembers, 'cid')
-            let code = selectMembers.length === 2 ? 1 : 2
-            commit(types.SetGroupTempList, upOnline(selectMembers))
-            resolve({code: code, cids, members: selectMembers})
-            commit(types.SetTempGroupMembers, []) // 清空选择
+            dispatch(types.GetTempGroupInfo).then((tempInfo) => {
+              console.log(tempInfo)
+              resolve(tempInfo)
+            })
           } else {
-              resolve({code: 4})
-            }
+            reject(new Error('error'))
+          }
+          commit(types.SetTempGroupMembers, []) // 清空选择
+          commit(types.SetTreeGroupSelectedList, [])
         })
       })
     },
     [types.RemoveTempGroup] ({commit}, type) {
       commit(appTypes.SetAppLoading, true)
-      let _type = type+''
+      let _type = type + ''
       return new Promise((resolve, reject) => {
         removeTempGroup(_type, res => {
           if (res && res.code === 0) {
             resolve()
+          } else {
+            reject(new Error('error'))
           }
         })
       })
@@ -185,32 +194,11 @@ export default {
         }
       }
     },
-    [types.GetTempGroupInfo] ({commit, state}, name) {
+    [types.GetTempGroupInfo] () {
       return new Promise((resolve) => {
         queryTempGroup(res => {
           if (res && res.code === 0) {
-            commit(types.SetNowStatus, name)
-            let cids = []
-            let onlineLength = 0
-            let newArr = res.data.map(item => {
-              let newItem = new Member({
-                cid: item.msId,
-                name: item.msName,
-                online: item.online + '',
-                type: item.msType,
-                grp: item.CurrGrpId,
-                callset: item.callSet
-              })
-              cids.push(item.msId)
-              if (item.online === 1) onlineLength++
-              return newItem
-            })
-            let creater = filterObjArrByKey(res.mid, state.memberList, 'cid')[0].name
-            let type = res.mid === state.myself.cid ? 0 : 1 // 判断是自己创建的临时群组还是别人创建的0自己，1别人
-            let tempGroupObj = new TempGroupInfo({name, length: res.data.length, type, cids, creater, onlineLength})
-            commit(types.SetTempGroupInfo, tempGroupObj)
-            commit(types.SetGroupTempList, upOnline(newArr))
-            resolve()
+            resolve(res)
           }
         })
       })
@@ -221,6 +209,35 @@ export default {
           console.log(res)
         })
         resolve()
+      })
+    },
+    [types.SetCallSet] ({commit, state}, {gid, mid, type}) {
+      console.log(gid, mid, type)
+      return new Promise((resolve, reject) => {
+        callSet(gid, mid, type, res => {
+          if (res && res.code === 0) {
+            resolve()
+          } else {
+            reject(new Error('error'))
+          }
+        })
+      })
+    },
+    [types.EditTempGroup] ({commit, dispatch}, {type, counts, mids}) {
+      commit(appTypes.SetAppLoading, true)
+      return new Promise((resolve, reject) => {
+        editTempGroup(type, counts, mids, res => {
+          console.log(res)
+          commit(appTypes.SetAppLoading, false)
+          if (res && res.code === 0) {
+            dispatch(types.GetTempGroupInfo).then((tempInfo) => {
+              console.log(tempInfo)
+              resolve(tempInfo)
+            })
+          } else {
+            reject(new Error('error'))
+          }
+        })
       })
     }
   }

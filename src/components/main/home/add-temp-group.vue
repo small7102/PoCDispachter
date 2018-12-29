@@ -1,31 +1,33 @@
 <template>
   <div class="group-wrap fl" key="add">
-      <div class="group-item flex align-center justify-center add-btn" @click="handleSelectTempGroup()" v-if="!tempGroupInfo || tempGroupInfo.creatType">
+      <div class="group-item flex align-center justify-center add-btn" @click="handleSelectTempGroup()" v-if="!tempGroupInfo || tempGroupInfo.creatType === 'SINGLE_TEMP_GROUP'">
         <icon type="ios-add" size="80"></icon>
       </div>
       <div class="group-item temp-group pr" v-else @click="selectTempGroup">
-        <Icon type="md-close-circle" class="pa icon-close" size="24" color="red" @click.stop="handleClose"/>
+          <div  class="pa icon-close"  @click.stop="handleClose">
+              <Icon type="md-close" size="16" color="rgba(255,255,255,.8)"/>
+          </div>
             <div class="top">
               <div class="info-line title">
-                <span>临时群组</span>
+                <span>{{languageCtx.addTempGroup.title}}</span>
               </div>
               <div class="info-line">
-                <span>名称:</span>
+                <span>{{languageCtx.addTempGroup.name}}:</span>
                 <span class="">{{tempGroupInfo.name}}</span>
               </div>
               <div class="info-line">
-                <span>创建人:</span>
+                <span>{{languageCtx.addTempGroup.creater}}:</span>
                 <span class="">{{tempGroupInfo.creater}}</span>
               </div>
               <div class="info-line">
-                <span>群组成员:{{tempGroupInfo.length}}人</span>
+                <span>{{languageCtx.addTempGroup.memberLength}}:{{tempGroupInfo.length}}人</span>
               </div>
               <div class="info-line">
-                <span>当前在线:{{tempGroupInfo.onlineLength}}人</span>
+                <span>{{languageCtx.addTempGroup.onlineLength}}:{{tempGroupInfo.onlineLength}}人</span>
               </div>
             </div>
             <div class="bottom">
-              <Button class="btn" @click.stop="isModalShow = !isModalShow" v-if="!tempGroupInfo.id">保存记录</Button>
+              <Button class="btn" @click.stop="isModalShow = !isModalShow" v-if="!tempGroupInfo.id">{{languageCtx.addTempGroup.saveBtnText}}</Button>
             <div class="bottom flex between align-center" v-else>
               <span class="id">ID: {{tempGroupInfo.id}}</span>
               <icon type="ios-people" size="40" color="#4990d7"/>
@@ -35,17 +37,17 @@
 
       <Modal
         v-model="isModalShow"
-        title="临时群组名称"
+        :title="languageCtx.addTempGroup.tempGroupTitle"
         width="400"
         footer-hide
         class-name="vertical-center-modal"
         >
         <Form ref="formInline" :model="formInline" :rules="ruleInline">
           <FormItem prop="name">
-          <Input autofocus placeholder="请输入群名称..." size="large" v-model="formInline.name"  @on-keydown.stop="handleKeyDown"/>
+          <Input autofocus :placeholder="languageCtx.addTempGroup.placeholder" size="large" v-model="formInline.name"  @on-keydown.stop="handleKeyDown"/>
           </FormItem>
           <FormItem :style="{textAlign: 'center'}">
-            <Button type="primary" @click="handleCommitTempGroup('formInline')" class="btn">确定</Button>
+            <Button type="primary" @click="handleCommitTempGroup('formInline')" class="btn">{{languageCtx.addTempGroup.submitText}}</Button>
           </FormItem>
         </Form>
     </Modal>
@@ -59,10 +61,11 @@ import mixin from '@/store/mixins/mixin'
 import Storage from '@/utils/localStorage'
 import addTemp from '@/store/mixins/createTempGroup'
 import { token } from '@/libs/webDispatcher-sdk.js'
+import language from './mixin'
 
 export default {
   name: 'AddTempGroup',
-  mixins: [mixin, addTemp],
+  mixins: [mixin, addTemp, language],
   props: {
     tempGroup: Object
   },
@@ -79,17 +82,16 @@ export default {
   data () {
     const validateName = (rule, value, callback) => {
       if (!value) {
-        return callback(new Error('名称不能为空'))
+        return callback(new Error(this.languageCtx.addTempGroup.noNameAlert))
       } else if (value.length > 10) {
-        return callback(new Error('不能大于10个字符'))
+        return callback(new Error(this.languageCtx.addTempGroup.nameLengthAlert))
       } else {
         let myTempGroupList = this.getMyTempGroupList() || []
-        console.log(myTempGroupList)
         let hasSameName = myTempGroupList.some(item => {
           return item.name === value
         })
         if (hasSameName) {
-          return callback(new Error('改名称已存在'))
+          return callback(new Error(this.languageCtx.addTempGroup.repeatNameAlert))
         } else {
           callback ()
         }
@@ -98,7 +100,7 @@ export default {
     return {
       isModalShow: false,
       hasCreatedTempGroupSuccess: false,
-      tempGroupName: '临时群组',
+      tempGroupName: '',
       formInline: {
         name: ''
       },
@@ -117,13 +119,13 @@ export default {
           let user = this.$store.getters.userInfo.msId
           if (!myTempInfo[user]) myTempInfo[user] = []
           let obj = {...this.tempGroupInfo, name: this.formInline.name, id: (new Date()).valueOf()}
-          myTempInfo[user].push(obj)
+          myTempInfo[user].unshift(obj)
 
           // 临时群组存到本地
           Storage.localSet('myTempInfo', myTempInfo)
           // 修改展示数据
           this.tempGroupInfo = obj
-          this.$store.commit(types.SetNowStatus, `当前在${obj.name}临时群组`)
+          this.$store.commit(types.SetNowStatus, `${obj.name}${this.languageCtx.addTempGroup.title}`)
           this.$store.commit(types.SetTempGroupList, myTempInfo[user])
           this.isModalShow = false
           this.hasCreatedTempGroupSuccess = true
@@ -145,7 +147,7 @@ export default {
       return myTempInfo ? myTempInfo[user] : [] 
     },
     handleSelectTempGroup () {
-      this.toCreatTempGroup({tempInfo: '', creatType: 'TEMP_GROUP'})
+      this.toCreatTempGroup({tempInfo: '', creatType: 'TEMP_GROUP',cids: this.$store.getters.treeGroupSelectedList})
     },
     forbidTriggleVoice () {}
   }

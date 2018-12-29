@@ -1,6 +1,5 @@
 <template>
-  <transition name="slider">
-    <div class="group-member-wrap scroll-bar">
+    <div class="group-member-wrap scroll-bar pr" id="membersWrap">
       <member-list :list="rowMemberList" 
                   v-if="memberListShow" 
                   @on-select="creatSingleGroup"
@@ -13,10 +12,14 @@
                   :msId="msId"
                   :colNum="colNum"
                   />
+      <div class="add-mask pa w100 h100 flex align-center justify-center" v-if="dragingMember">
+        <div class="content flex shine">
+          <Icon type="ios-add-circle-outline" color="rgba(255, 255, 255, .8)" size="60"/>
+          <div class="text">在此添加</div>
+        </div>
+      </div>
     </div>
-    </transition>
 </template>
-
 <script>
 import mixin from '@/store/mixins/mixin'
 import addTemp from '@/store/mixins/createTempGroup'
@@ -66,6 +69,14 @@ export default {
       set (val) {
         this.$store.commit(types.SetSingleCallActiveCid, val)
       }
+    },
+    dragingMember: {
+      get () {
+        return this.$store.state.group.dragingMember
+      },
+      set (val) {
+        this.$store.commit(types.SetDragingMember, val)
+      }
     }
   },
   mounted() {
@@ -88,12 +99,9 @@ export default {
     creatSingleGroup (item) {
       if (this.singleCallActiveCid !== item.cid) {
         this.singleCallActiveCid = item.cid
-        this.toCreatTempGroup({tempInfo: '', creatType: 'SINGLE_TEMP_GROUP'})
-      } else if (!this.activeCid) {
-        this.handleClose({creatType: 'SINGLE_TEMP_GROUP'})
-        this.singleCallActiveCid = ''
+        this.toCreatTempGroup({tempInfo: '', creatType: 'SINGLE_TEMP_GROUP', cids: item.cid})
       } else {
-        this.$store.commit(app.SetAppLoading, false)
+        this.handleClose()
       }
     },
     myselfStyl () {
@@ -141,7 +149,7 @@ export default {
       if (!newVal && oldVal.type !== 0) {
         this.renderMemberList({memberList: this.memberList, isMemberListShow: false})
       } 
-    }
+    },
   }
 }
 </script>
@@ -154,6 +162,21 @@ export default {
     height 100%
     padding 36px 40px
     overflow-y auto
+    .add-mask
+      top 0
+      left 0
+      z-index 10
+      background rgba(0, 0, 0, .35)
+      .content
+        color #ffffff
+        text-align center
+        height 150px
+        width 300px
+        border 2px dashed rgba(255, 255, 255, .6)
+        flex-direction column
+        justify-content space-around
+      .text
+        font-size 20px  
     .member-item
       box-shadow 0 0 3px 5px rgba(100, 139, 149, .2)
       border-radius 8px
@@ -175,8 +198,8 @@ export default {
         background $color-ssub-theme
         border 1px solid $color-ssub-theme-border
       &.myself
-        background $color-sub-theme
-        border 1px solid $color-sub-theme-border
+        background $color-ssub-theme
+        border 1px solid $color-sub-theme
   .slider-in-active, .slider-out-active
     transition all 0.8s ease 
   .slider-in-enter, .slider-out-active

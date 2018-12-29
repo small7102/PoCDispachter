@@ -10,15 +10,14 @@
               <div class="group-item" :class="{active: item.gid === activeGid}">
                 <div class="top">
                     <div class="info-line title">
-                      <span>群组:</span>
+                      <span>{{languageCtx.blockGroup.name}}:</span>
                       <span class="">{{item.name}}</span>
                     </div>
                     <div class="info-line">
-                      <span>群组成员:{{membersList[item.gid].length}}人</span>
+                      <span>{{languageCtx.blockGroup.memberLength}}:{{membersList[item.gid].length}}人</span>
                     </div>
                     <div class="info-line">
-                      <span>当前在线:</span>
-                      <!-- <span v-if="membersList[item.gid].length!==item.all">onlineList</span> -->
+                      <span>{{languageCtx.blockGroup.onlineLength}}:</span>
                       <span v-html="onlineList[index]"></span>
                     </div>
                 </div>
@@ -39,12 +38,15 @@
 import * as types from '@/store/types/group'
 import * as userTypes from '@/store/types/user'
 import * as app from '@/store/types/app'
+import * as log from '@/store/types/log'
 import { getTreeList, uniqueArr } from '@/utils/utils'
 import Storage from '@/utils/localStorage'
 import mixin from '@/store/mixins/mixin'
 import AddTempGroup from './add-temp-group'
 import Arrow from '@/components/base//arrow'
 import {debounce} from '@/utils/utils'
+import {codeConfig} from '@/libs/codeConfig'
+import language from './mixin'
 const BLOCK_ITEM_WIDTH = 218
 
 export default {
@@ -59,7 +61,7 @@ export default {
     tempGroup: Object,
     isRemoving: Boolean
   },
-  mixins: [mixin],
+  mixins: [mixin, language],
   data () {
     return {
       slectedGroup: '',
@@ -100,10 +102,19 @@ export default {
     },
     containerStyle () {
       return this.getContainerStyle()
+    },
+    user () {
+      return this.$store.getters.userInfo
+    },
+    singleCallActiveCid () {
+      return this.$store.getters.singleCallActiveCid
+    },
+    switchingGroup () {
+      return this.$store.state.group.switchingGroup
     }
   },
   created() {
-    this.debounce = debounce(this.messageAlert.bind(this, 'warning', '您已在当前群组'), 300)
+    this.debounce = debounce(this.messageAlert.bind(this, 'warning', this.languageCtx.blockGroup.atGroupAlert), 300)
   },
   mounted () {
     this.setLeftArrowStyle()
@@ -118,19 +129,15 @@ export default {
         width: `${this.containerWidth}px`
       }
     },
-    selectGroup (item) {
-      this.debounce(item)
-    },
     dispatchSwitchGroup (item) {
-      let tempGroupInfo = this.$store.getters.tempGroupInfo
+      this.$store.commit(types.SetSwitchingGroup, null)
       if (this.activeGid === item.gid) {
-        if (!tempGroupInfo || this.$store.getters.singleCallActiveCid) { // 没有临时群组或者在当前组有单呼
+        if (!this.tempGroupInfo || this.singleCallActiveCid) { // 没有临时群组或者在当前组有单呼
           this.debounce()
-        } else {
+        } else { // 有临时群组时切换
           let memberObj = this.$store.getters.memberList
           if (memberObj && memberObj[item.gid]) {
             this.$emit('on-init', memberObj[item.gid])
-            this.$store.commit(types.SetNowStatus, `正在与${tempGroupInfo.name}通信...`)
           }
         }
       } else {
@@ -138,12 +145,11 @@ export default {
           this.messageNotice(res)
           if (!res) {
             this.switchToOtherGroup({prevGid: this.activeGid, nowGid: item.gid}).then((memberList) => {
-              this.$store.commit(app.SetAppLoading, false)
+              let prevGroup = this.groupList.find(groupItem => {return groupItem.gid === this.activeGid})
               this.activeGid = item.gid
-              // this.initMemberList() // 变化成员列表
               this.$emit('on-init', memberList)
   
-              if (tempGroupInfo) this.$store.commit(types.SetNowStatus, `与${tempGroupInfo.name}通信...`)
+              if (this.tempGroupInfo && this.tempGroupInfo.creatType !== 'SINGLE_TEMP_GROUP') this.$store.commit(types.SetNowStatus, `${this.languageCtx.blockGroup.tempGroup}`)
               this.handleReactiveOpenGroup(item)
             }) 
           }
@@ -166,22 +172,8 @@ export default {
       this.commitOpenGroup(this.openedGroup)
     },
     messageNotice (res) {
-      const message = {
-          0: {
-            type: 'success',
-            info: '成功切换群组'
-          },
-          1: {
-            type: 'info',
-            info: '此群组ID不存在'
-          },
-          2: {
-            type: 'info',
-            info : '不再此群组'
-          }
-        }
-
-        this.messageAlert(message[res].type, message[res].info)
+      const message = this.languageCtx.blockGroup.message
+      this.messageAlert(message[res].type, message[res].info)
     },
     selectTempGroup () {
       this.$emit('on-back')
@@ -231,10 +223,8 @@ export default {
     },
   },
   watch: {
-    groupList () {
-      let openGroup = this.$store.getters.openGroup
-      this.openedGroup = [...openGroup]
-      this.activeGid = openGroup[0]
+    groupList (val) {
+      this.activeGid = this.user.gId
       if (this.isFirstInit) this.isFirstInit = false
       this.initMemberList()
     },
@@ -245,6 +235,9 @@ export default {
       if (!this.isFirstInit) {
         this.$emit('on-init', val[this.activeGid])
       }
+    },
+    switchingGroup (val) {
+      val && this.dispatchSwitchGroup(val)
     }
   }
 }
@@ -272,18 +265,6 @@ export default {
       width auto
     .group-container
       transition margin-left .3s
-      &.hasGroup
-        &::after
-          display block
-          width 300px
-          content 'no more...'
-          color $color-theme-weight
-          line-height 15px
-          text-align center
-          position absolute
-          right 10px
-          top 0
-          transform rotate(90deg) translate(100px, -150px)
   .v-enter,.v-leave-to
       transform translateY(80px)
   .v-enter-active,
