@@ -481,6 +481,7 @@ function pttStop() {
   if (isDoor) {
     if (isDev)
       console.log("end ptt");
+    console.log('录音结束')
     sRecorder.endRecord(); //停止录音
     window.clearInterval(pttRespInterval); //停止ptt失败回调线程
     isDoor = false;
@@ -573,12 +574,13 @@ function saveVoice(callback) {
   saveVoiceInterval = setInterval(function () {
     if (saveVoiceResp != null) {
       //执行回调方法
+      console.log(saveVoiceResp)
       if (callback && typeof (callback) === "function")
         callback(saveVoiceResp);
       //清除结果
       saveVoiceResp = null;
     }
-  }, 100);
+  }, 500);
 }
 
 //获取服务器信息

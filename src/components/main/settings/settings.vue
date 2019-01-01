@@ -8,8 +8,8 @@
         @on-ok="handleSubmitSettings">
       <Form :label-width="100">
         <FormItem :label="pttQuickKey.label">
-            <div v-html="pttQuickKey.key" 
-                class="quick-key" 
+            <div v-html="pttQuickKey.key"
+                class="quick-key"
                 @mouseover="isMouseOnQuickKey=true"
                 @mouseleave="isMouseOnQuickKey=false">
             </div>
@@ -125,7 +125,7 @@ export default {
         return false;
       }
     })
-    
+
   },
   methods: {
     setQuickKey (ev) {
@@ -175,7 +175,7 @@ export default {
   padding-bottom 15px
   span
     width 100px
-    text-align right 
+    text-align right
     font-weight bold
     display inline-block
     padding-right 10px

@@ -74,7 +74,7 @@ export default {
           this.map.on('mousemove', ev => {
           if (this.isDragShape && !this.isMenuShow) {
             if (this.dragStartTime === 0) {
-              this.shapeOriginPoint = new Array(ev.lnglat.lng, ev.lnglat.lat)       
+              this.shapeOriginPoint = new Array(ev.lnglat.lng, ev.lnglat.lat)
               this.dragBounds = this.createBounds(ev.lnglat.lng, ev.lnglat.lat, ev.lnglat.lng, ev.lnglat.lat)
               this.dragStartTime = this.getTimeNow()
             } else {
@@ -86,8 +86,8 @@ export default {
             this.dragEv = ev
           }
         })
-          //this.setMarkers()
-          this.addMarker(this.gpsPoint, this.isAlarm(this.gpsPoint))
+          this.setMarkers()
+          // this.addMarker(this.gpsPoint, this.isAlarm(this.gpsPoint))
           resolve()
         }
         let url = 'https://webapi.amap.com/maps?v=1.4.8&key=688cc2b560762ab60c38207623d82b79&callback=onLoad';
@@ -96,11 +96,6 @@ export default {
         jsapi.src = url;
         document.head.appendChild(jsapi);
       })
-    },
-    setMarkers () {
-      for (let point of this.GPSList) {
-        this.addMarker(point)
-      }
     },
     addMarker (point, isAlarm) {
       if (point) {
@@ -119,26 +114,8 @@ export default {
           console.log(ev)
         })
         this.map.add(marker)
-        this.map.setFitView() 
+        this.map.setFitView()
       }
-    },
-    isAlarm (point) {
-      if (point) {
-        let isAlarm = false
-        for (let key in point.alarm) {
-          if (point.alarm[key] === 1) {
-            isAlarm = true
-          }
-        }
-        return isAlarm
-      }
-    },
-    clearMakers () {
-      let markers = this.map.getAllOverlays('marker')
-      for (let marker of markers) {
-        this.map.remove(marker)
-      }
-      markers = null
     },
     createShape ({bounds, fillOpacity = 0.35}) {
       return new AMap.Rectangle({
@@ -200,35 +177,35 @@ export default {
     },
     filterRenderMarker (point) {
       let markers = this.map.getAllOverlays('marker')
-        console.log(markers[0].F.title, point.mid)
-      let _point = markers.find(item => {
-        return item.F.title === point.mid
+      let gIndex
+      let _point = markers.find((item, index) => {
+        if (item.F.title === point.mid) gIndex = index
+        return item.F.title === point.mid || point
       })
-      let newIsAlarm = this.isAlarm(point)
-      let oldIsAlarm = this.isAlarm(_point)
-      console.log(point, _point)
-      // console.log(markers, newIsAlarm, oldIsAlarm)
-      // if (_point && (Math.abs(_point.F.position.lat - point.lat) > DEVICE_MAX_OFFSET || Math.abs(_point.F.position.lng - point.lng)>DEVICE_MAX_OFFSET || newIsAlarm !== oldIsAlarm)) {
-      //   isRender = true
-      // } else if (!_point) {
-      //   isRender = true
-      // } else {
-      //   isRender = false
-      // }
-      return {new: point, old: _point, newIsAlarm, oldIsAlarm}
+      let newIsAlarm = typeof point !== 'string' && this.isAlarm(point)
+
+      return {new: point, old: _point, newIsAlarm}
     }
   },
   watch: {
     gpsPoint (point, oldPoint) {
+      let list = [...this.GPSList]
       if (!oldPoint) {
         this.addMarker(point, this.isAlarm(point))
+        list.push(point)
       } else {
         let pointObj = this.filterRenderMarker(point)
-          pointObj.old && this.map.remove(pointObj.old)
-          this.addMarker(pointObj.new, pointObj.newIsAlarm)
-        // if (pointObj.render) {
-        // }
+        pointObj.old && this.map.remove(pointObj.old)
+        if (pointObj.old) {
+          this.map.remove(pointObj.old)
+          list = list.filter(item => {
+            return item.mid !== point.mid
+          })
+          list.push(point)
+        }
+        typeof point !== 'string' && this.addMarker(pointObj.new, pointObj.newIsAlarm)
       }
+      this.GPSList = list
     }
   }
 }

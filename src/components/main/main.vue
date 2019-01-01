@@ -29,7 +29,7 @@
         </Content>
       </Layout>
     </Layout>
-  
+
   <div v-if="isRecording">
     <toast iconType="ios-mic" @on-cancel="handleEndPtt" v-if="pttAble">
       <div class="decorate voiceSignal" slot="decorateIcon">
@@ -48,7 +48,7 @@
     </toast>
   </div>
     <small-loading v-if="isAppLoading"/>
-    <Modal 
+    <Modal
       v-model="microTip"
       :mask-closable="false"
       :closable="false"
@@ -87,7 +87,6 @@ import Storage from '@/utils/localStorage'
 import Ptt from './ptt'
 import {Member, TempGroupInfo, Message} from '@/libs/dom'
 import SearchGroup from './search-group'
-// import {gcj02towgs84, wgs84togcj02} from '@/utils/coordinate'
 const coordtransform = require('coordtransform')
 
 const SOMEONE_ELSE = 1
@@ -162,16 +161,17 @@ export default {
         }).catch((res) => {
           this.microTip = true
         })
+        receiveNotice(res => {
+          this.noticeCallback(res)
+        })
         receiveVoice(res => {
           this.isCalling = true
           if (this.isCalling) {
             this.receiveVoiceCallback(res)
           }
         })
-        receiveNotice(res => {
-          this.noticeCallback(res)
-        })
         saveVoice(res => {
+          console.log('收到语音', res)
           this.saveVoiceCallback(res)
         })
         receiveSMS(res => {
@@ -215,8 +215,9 @@ export default {
     },
     receiveSMSCallback (res) {
       if (res) {
-        let messageList = [...this.messageList]
         let {mid, time, mName, msg} = res
+        if (msg.indexOf('$file') > -1) return
+        let messageList = [...this.messageList]
         time = dateFmt("hh:mm:ss", new Date())
         let message = new Message({
           time,
@@ -252,7 +253,7 @@ export default {
             this.handleSomeoneOnline({gid, mid: res.mid, online: '0'})
             this.handleGPSOffline(res.mid)
             break
-          case codeConfig.switchNotice: // 切换群组通知      
+          case codeConfig.switchNotice: // 切换群组通知
             this.switchToOtherGroup({prevGid: gid, nowGid: res.gid, type: 'someone-else', mid: res.mid, res})
             break
           case codeConfig.repeatLoginNotice: // 重复登录
@@ -271,6 +272,8 @@ export default {
           case codeConfig.callsetNotice: //通话设置
             // this.handleCallseted(res, name)
             break
+          case codeConfig.startPttNotice:
+            console.log(123)
           default:
             break
         }
@@ -282,7 +285,7 @@ export default {
         this.messageAlert('warning', `${this.languageCtx.repeatLoginNotice}`)
         return
       }
-      
+
       if (notices && Array.isArray(notices)) {
         notices.forEach(notice => {
           if (notice.key === noticeCode[res.type] && notice.val) {
@@ -297,20 +300,15 @@ export default {
       }
     },
     receiveGPSCallback (res) {
-      console.log(res)
       if (res) {
       let {lat, lng, mid} = res
       let gpsLatLng = coordtransform.wgs84togcj02(lng, lat)
       let name = this.allMembersObj[mid].name
-      let GPSList = [...this.$store.getters.GPSList]
       res = {...res, lat: gpsLatLng[1],lng: gpsLatLng[0]}
       this.$store.commit(map.SetGpsPoint, res)
       this.saveAlarmNotice(res, name)
       if (this.gpsLogData && this.gpsLogData.length !== 0) {
         setTimeout(() => {
-          // GPSList.unshift(res)
-          // GPSList = uniqueArr(GPSList, 'mid')
-          this.$store.commit(map.SetGPSList, GPSList)
           this.$store.commit(log.SaveLog, {
             account: mid,
             name,
@@ -324,8 +322,6 @@ export default {
           this.gpsLogData = list
         }
       } else {
-        // GPSList.unshift(res)
-        // this.$store.commit(map.SetGPSList, GPSList)
         this.$store.commit(log.SaveLog, {
           account: mid,
           name,
@@ -333,18 +329,6 @@ export default {
           remark: `(${this.languageCtx.lat}:${lat};${this.languageCtx.lng}:${lng})`
         })
       }
-      // res = {...res, lat: gpsLatLng[1],lng: gpsLatLng[0]}
-      //   let itemIndex
-      //   let GPSList = [...this.$store.getters.GPSList]
-      //   let hasItem = GPSList.some((item, index) => {
-      //     return res.mid === item.mid && Math.abs(res.lat - item.lat) < DEVICE_MAX_OFFSET && Math.abs(res.lng - item.lng) < DEVICE_MAX_OFFSET
-      //   })
-
-      //   if (!hasItem) {
-      //     GPSList.unshift(res)
-      //     GPSList = uniqueArr(GPSList, 'mid')
-      //     this.$store.commit(map.SetGPSList, GPSList)
-      //   }
       }
     },
     saveAlarmNotice (gps, name) {
@@ -370,11 +354,12 @@ export default {
       this.nowGroup()
     },
     handleGPSOffline (mid) {
-      let GPSList = [...this.$store.getters.GPSList]
-      GPSList = GPSList.filter(item => {
-        return item.mid !== mid
-      })
-      this.$store.commit(map.SetGPSList, GPSList)
+      // let GPSList = [...this.$store.getters.GPSList]
+      // GPSList = GPSList.filter(item => {
+      //   return item.mid !== mid
+      // })
+      // this.$store.commit(map.SetGPSList, GPSList)
+      this.$store.commit(map.SetGpsPoint, mid)
     },
     storageVoice (voice) {
       this.voiceList = [...this.$store.getters.voiceList]
@@ -386,7 +371,7 @@ export default {
         this.tempGroupList = Storage.localGet('myTempInfo')[this.user.msId]
       }
     },
-    hasLocalItems (item) {   
+    hasLocalItems (item) {
       if (Storage.localGet(item) && Storage.localGet(item)[this.user.msId]) {
         return true
       } else {
@@ -433,7 +418,7 @@ export default {
       return remark
     },
     getDescStatus (callset) {
-     return this.languageCtx.message[codeConfig][callset] 
+     return this.languageCtx.message[codeConfig][callset]
     },
     throttleResize () {
       if (document.body.clientWidth < 1200 || document.body.clientHeight < 600) this.isResizeable = false

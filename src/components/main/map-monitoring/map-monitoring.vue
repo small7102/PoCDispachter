@@ -2,7 +2,7 @@
 <div class="map-wrap pr h100">
   <div class="map-container h100" id="map" @mousedown="handleStartDrag" @mouseup="handleEndDrag">
   </div>
-  <right-menu ref="menu" 
+  <right-menu ref="menu"
               v-if="isMenuShow"
               @on-set-defaut="setDefaultCenter"
               @on-move="handleMoveToDefaultPoint"/>
@@ -43,10 +43,11 @@ export default {
       shapeTop: 0,
       shapeLeft: 0,
       shapeWidth: 0,
-      shapeHeight: 0
+      shapeHeight: 0,
+      gPoints: []
     }
   },
-  mounted() { 
+  mounted() {
     this.mapContainer = document.getElementById('map')
     this.initMap()
   },
@@ -86,6 +87,8 @@ export default {
               this.dragEv = ev
           }
         })
+        console.log(this.GPSList)
+        console.log(this.map)
         this.setMarkers()
       }
     },
@@ -104,28 +107,20 @@ export default {
       this.map.panTo(center)
       if (this.map.zoom !== 13) this.map.setZoom(zoom)
     },
-    setMarkers () {
-      for (let point of this.GPSList) {
-        let isAlarm
-        for (let key in point.alarm) {
-          if (point.alarm[key] === 1) {
-            isAlarm = true
-          }
-        }
-        console.log(isAlarm)
+    addMarker (point, isAlarm) {
+      if (point) {
         let marker = new google.maps.Marker({
           position: {lat: point.lat, lng: point.lng},
           map: this.map,
-          title: this.allMembersObj[point.mid].name,
-          icon: isAlarm ? this.redIconImage : this.iconImage
+          icon: isAlarm ? this.redIconImage : this.iconImage,
+          title: point.mid
         })
-        this.markers.push(marker)
 
         let infoWindow = new google.maps.InfoWindow({
           content: this.allMembersObj[point.mid].name
         })
-
         infoWindow.open(this.map, marker)
+        this.gPoints.push(marker)
       }
     },
     setMapOnAll (map) {
@@ -155,7 +150,7 @@ export default {
       })
     },
     handleEndDrag (ev) {
-      ev.button === 2 && this.isDragShape && this.dragDirection(this.dragEv.latLng.lat(), this.shapeOriginPoint.lat, this.dragEv.latLng.lng(), this.shapeOriginPoint.lng)
+      (ev.button === 2 && this.isDragShape) && this.dragDirection(this.dragEv.latLng.lat(), this.shapeOriginPoint.lat, this.dragEv.latLng.lng(), this.shapeOriginPoint.lng)
       this.endDrag(ev, 'PART').then(() => {
         this.map.setOptions({
           draggable: true
@@ -175,22 +170,38 @@ export default {
       }).catch(() => {
         this.messageAlert('warning', '没有设置默认中心点')
       })
+    },
+    filterRenderMarker (point) {
+      let gIndex
+      let _point = this.gPoints.find((item, index) => {
+        if (item.title === point.mid) gIndex = index
+        return item.title === point.mid || point
+      })
+      let newIsAlarm = typeof point !== 'string' && this.isAlarm(point)
+      if (_point) {
+        _point.setMap(null)
+        this.gPoints.splice(gIndex, 1)
+      }
+      return {new: point, old: _point, newIsAlarm}
     }
   },
   watch: {
-    GPSList (list) {
-      this.clearMarkers()
-      console.log(list)
-      if (this.map && list.length) {
-        this.setCenterAndZoom({lat: list[0].lat, lng: list[0].lng}, 16)
-        this.setMarkers()
+    gpsPoint (point, oldPoint) {
+      let list = [...this.GPSList]
+      if (!oldPoint) {
+        this.addMarker(point, this.isAlarm(point))
+      } else {
+        console.log(this.gPoints)
+        let pointObj = this.filterRenderMarker(point)
+        if (pointObj.old) {
+          list = list.filter(item => {
+            return item.mid !== point.mid
+          })
+          list.push(point)
+        }
+        typeof point !== 'string' && this.addMarker(pointObj.new, pointObj.newIsAlarm)
       }
-    },
-    tempGroupInfo (val) {
-      if (!val) {
-        this.selectMid = []
-        this.hasSelected = false
-      }
+      this.GPSList =list
     }
   }
 }

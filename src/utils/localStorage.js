@@ -2,12 +2,18 @@ var Storage = {
   // ==================sessionsTorage设置缓存================
   // 设置缓存
   sessionSet: function (name, data) {
+    if (data) {
       sessionStorage.removeItem(name)
       sessionStorage.setItem(name, JSON.stringify(data))
+    }
   },
   // 获取缓存
   sessionGet: function (name) {
+    let item = sessionStorage.getItem(name)
+    if (item&&item!==void 0&&item!=='undefined') {
       return JSON.parse(sessionStorage.getItem(name))
+    }
+    return void 0
   },
   // 清除缓存
   sessionRemove: function (name) {

@@ -5,8 +5,13 @@ import * as map from '@/store/types/map'
 
 export default {
   computed: {
-    GPSList () {
-      return this.$store.getters.GPSList
+    GPSList: {
+      get () {
+        return this.$store.getters.GPSList
+      },
+      set (val) {
+        this.$store.commit(map.SetGPSList, val)
+      }
     },
     tempGroupInfo () {
       return this.$store.getters.tempGroupInfo
@@ -16,6 +21,9 @@ export default {
     },
     gpsPoint () {
       return this.$store.state.map.gpsPoint
+    },
+    allMembersObj () {
+      return this.$store.state.group.allMembersObj
     }
   },
   data () {
@@ -57,24 +65,34 @@ export default {
       if (myDefaultCenter && myDefaultCenter[this.user.msId]) {
         this.centerPoint = myDefaultCenter[this.user.msId].centerPoint
       } else {
-        this.centerPoint = this.GPSList.length ? {lat: this.GPSList[0].lat, lng: this.GPSList[0].lng} : {lat: 39.989628, lng: 116.480983}
+        this.centerPoint = this.gpsPoint ? {lat: this.gpsPoint.lat, lng: this.gpsPoint.lng} : {lat: 39.989628, lng: 116.480983}
       }
     },
     handleSelectFullScreen (type) {
-      if (this.GPSList.length) {
-        this.filterDevice(type)
+      let markers = type === 'A_FULL' ? this.map.getAllOverlays('marker') : this.gPoints
+      console.log(markers)
+      if (markers.length) {
+        this.filterDevice(type, markers)
       } else {
         this.messageAlert('warning', '当前位置没有成员')
       }
     },
-    filterDevice (type) {
+    filterDevice (type, markers) {
       let bounds = this.getFilterBounds(type)
       console.log(type)
       let hasGPSItem = false
       if ((!this.dragShape && type === 'PART') || !bounds) return
-      for (let item of this.GPSList) {
+      for (let item of markers) {
         let hasSelected = false
-        if (item.lat < bounds.north && item.lat > bounds.south && item.lng < bounds.east && item.lng > bounds.west) {
+        let position = {}
+        if (type.indexOf('A_') > -1) {
+          position.lat = item.F.position.lat
+          position.lng = item.F.position.lng
+        } else {
+          position.lat = item.position.lat()
+          position.lng = item.position.lng()
+        }
+        if (position.lat < bounds.north && position.lat > bounds.south && position.lng < bounds.east && position.lng > bounds.west) {
           hasSelected = true
           hasGPSItem = true
         }
@@ -83,15 +101,23 @@ export default {
           let hasMid = this.selectMid.some(mid => {
             return mid === item.mid
           })
-          if (!hasMid) this.selectMid.push(item.mid)
+          let title = type.indexOf('A_') > -1 ? item.F.title : item.title
+          if (!hasMid) this.selectMid.push(title)
         }
       }
-
-      let mapTempMemberList = filterObjArrByKey(this.selectMid, this.$store.getters.memberList, 'cid')
-      this.$store.commit(map.SetMapTempMemberList, mapTempMemberList)
+      this.selectMid.length && this.getMapTempMembers()
       if (!hasGPSItem && (type === 'A_FULL' || type === 'G_FULL')) {
         this.messageAlert('warning', '当前位置没有成员')
       }
+    },
+    getMapTempMembers () {
+      console.log(this.selectMid)
+      const arr = this.selectMid.map(item => {
+        let obj = this.allMembersObj[item]
+        return obj
+      })
+      console.log(arr)
+      this.$store.commit(map.SetMapTempMemberList, arr)
     },
     clearShape () {
       if (this.dragShape) {
@@ -182,6 +208,22 @@ export default {
     getTimeNow () {
       let now = new Date()
       return now.getTime()
+    },
+    setMarkers () {
+      for (let point of this.GPSList) {
+        this.addMarker(point, this.isAlarm(point))
+      }
+    },
+    isAlarm (point) {
+      if (point) {
+        let isAlarm = false
+        for (let key in point.alarm) {
+          if (point.alarm[key] === 1 && key === 'isDanger') {
+            isAlarm = true
+          }
+        }
+        return isAlarm
+      }
     }
   }
 }

@@ -28,12 +28,12 @@ export default {
 
 <style lang="stylus">
 @import '../../../assets/styles/variable.styl';
-.loading-wrap 
+.loading-wrap
   position fixed
   width 100%
   bottom 0
   top 0
-  z-index 999
+  z-index 9999
 .loading
   width 140px
   padding 30px
@@ -60,7 +60,7 @@ export default {
 .fade-out-active
   transition all 0
 .fade-in-enter, .fade-out-active
-  opacity 0 
+  opacity 0
 
 @keyframes stretchdelay
   0%, 40%, 100%

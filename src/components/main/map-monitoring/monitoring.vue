@@ -34,11 +34,12 @@ export default {
       this.$refs[type].handleDeleteMember(mid)
     },
     handleSelect(type) {
-      if (this.$store.state.group.tempGroupInfo) return
+      // if (this.$store.state.group.tempGroupInfo) return
       const mapType = {
         amap: 'A_FULL',
         gmap: 'G_FULL'
       }
+      console.log(type, mapType[type],this.$refs[type])
       this.$refs[type].handleSelectFullScreen(mapType[type])
     },
     handleChangeMap (map) {

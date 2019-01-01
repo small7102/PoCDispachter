@@ -12,6 +12,9 @@ export default {
   computed: {
     settingItems () {
       return this.$store.state.app.settingItems
+    },
+    user () {
+      return this.$store.state.user.userInfo
     }
   },
   data () {

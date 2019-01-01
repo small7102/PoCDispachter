@@ -6,8 +6,8 @@
                   :class="{active: col.cid===activeCid, myself: col.cid === msId}"
                   @click="creatSingleGroup(col)">
               <Icon type="ios-contact" v-if="col.cid === msId" color="#c77453" size="14" class="myself-icon pa"/>
-              <span class="close-icon pa" 
-                    v-if="tempGroupInfo && tempGroupInfo.creatType !== 'SINGLE_TEMP_GROUP'"
+              <span class="close-icon pa"
+                    v-if="tempGroupInfo && tempGroupInfo.creatType !== 'SINGLE_TEMP_GROUP' && type === 'temp'"
                     @click="handleDelMember(col)">
                 <Icon type="md-close" color="rgba(255, 255, 255, .8)" size="12"/>
               </span>
@@ -145,10 +145,10 @@ export default {
       &.myself
         background $color-ssub-theme
         border 1px solid $color-sub-theme-border
-        
+
 
   .slider-in-active, .slider-out-active
-    transition all 0.8s ease 
+    transition all 0.8s ease
   .slider-in-enter, .slider-out-active
     transform translateY(300px)
 </style>

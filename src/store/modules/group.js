@@ -16,9 +16,7 @@ export default {
     selectMemberList: [],
     tempGroupList: [], // 右侧临时群组列表
     nowStatus: '',
-    myself: {},
     treeGroupSelectedList: [],
-    memberlistGetOver: false,
     tempGroupInfo: null,
     singleCallActiveCid: '',
     messageList: [],
@@ -41,10 +39,8 @@ export default {
     },
     tempGroupMembers: state => state.tempGroupMembers,
     nowStatus: state => state.nowStatus,
-    myself: state => state.myself,
     treeGroupSelectedList: state => state.treeGroupSelectedList,
     groupTempList: state => state.groupTempList,
-    memberlistGetOver: state => state.memberlistGetOver,
     tempGroupInfo: state => state.tempGroupInfo,
     singleCallActiveCid: state => state.singleCallActiveCid,
     messageList: state => state.messageList
@@ -83,17 +79,11 @@ export default {
     [types.SetNowStatus] (state, newState) {
       state.nowStatus = newState
     },
-    [types.SetMyself] (state, newState) {
-      state.myself = newState
-    },
     [types.SetTreeGroupSelectedList] (state, newState) {
       state.treeGroupSelectedList = newState
     },
     [types.SetGroupTempList] (state, newState) {
       state.groupTempList = newState
-    },
-    [types.SetMemberlistGetOver] (state, newState) {
-      state.memberlistGetOver = newState
     },
     [types.SetTempGroupInfo] (state, bool) {
       state.tempGroupInfo = bool

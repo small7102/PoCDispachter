@@ -1,13 +1,5 @@
 <template>
   <div class="search-wrap">
-    <!-- <Input search 
-           :placeholder="languageCtx.placeholder" 
-           class="search-box"
-           @on-search="handleSearch" 
-           v-model="searchName"
-           @on-keydown.stop="forbiddenVoice"
-           @on-change="handleChange"
-           @on-blur="handleBlur"/> -->
     <Poptip trigger="focus" title="搜索结果" class="w100" width="240" placement="bottom-start">
       <Input class="w100 search-box"
             :autofocus="isAutofocus"
@@ -115,7 +107,7 @@ export default {
     width 240px
     line-height 36px
   .result-list
-    max-height 340px
+    max-height 280px
     overflow auto
     padding-right 5px
     .item

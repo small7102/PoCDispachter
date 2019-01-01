@@ -2,6 +2,8 @@ import {dateFmt, hasIllegalChar, getStrCharLength} from '@/utils/utils'
 import {Message} from '@/libs/dom'
 import mixin from '@/store/mixins/mixin'
 import * as types from '@/store/types/group'
+import * as log from '@/store/types/log'
+const messageNotice = 103
 
 export default {
   mixins: [mixin],
@@ -40,17 +42,25 @@ export default {
         }
         let mid = this.member ? this.member.cid : ''
         this.$store.dispatch(types.SendSMS, {mid, msName: this.user.msName, msg: this.sendingMessage}).then(() => {
+          let receivers = this.getReceivers()
           let message = new Message({
             time: dateFmt('hh:mm:ss', new Date()),
             msName: this.user.msName,
             msg: this.sendingMessage,
             arrow: '>>',
             list: [...this.$store.getters.messageList],
-            others: this.getReceivers()
+            others: receivers
           })
 
           message.addMessage()
           this.$store.commit(types.SetMessageList, message.list)
+          this.$store.commit(log.SaveLog, {
+            account: mid,
+            name: this.user.msName,
+            type: messageNotice,
+            remark: `发送短信内容(${this.sendingMessage})To(${receivers})`
+          })
+
           this.sendingMessage = ''
           this.sendingMessage = this.sendingMessage.replace(/[\r\n]/g, '')
         })
@@ -66,14 +76,14 @@ export default {
       if (this.tempGroupInfo) {
         mids = this.tempGroupInfo.cids
         mids.forEach(item => {
-          let name = this.getSomeoneName(item)
+          let name = this.allMembersObj[item].name
           result.push(name)
         })
       } else {
         let gid = this.user.gId
         console.log(gid, this.memberObj)
         this.memberObj[gid].forEach(item => {
-          let name = this.getSomeoneName(item.cid, gid)
+          let name = this.allMembersObj[item.cid].name
           if (item.cid !== this.user.msId) result.push(name)
         })
       }

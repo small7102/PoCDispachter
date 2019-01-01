@@ -102,29 +102,41 @@ export default {
     }) { // 创建临时群组
       this.$store.dispatch(types.CreatTempGroup, this.getCreateTempParam(Cids))
         .then((res) => {
-          console.log(res)
           let remark = []
           this.locationGroup()
           // creatType !== 'SINGLE_TEMP_GROUP' ? this.messageNotice(SUCCESS_CREATE_TEMPGROUP) : this.messageNotice(SUCCESS_CREATE_SINGLEGROUP)
           this.getTempGroupInfo(res, creatType, tempInfo)
           this.tempGroupInfo.cids.forEach(item => {
-            let name = this.allMembersObj[item]
+            let name = this.allMembersObj[item].name
             remark.push(name)
           })
           if (creatType !== 'SINGLE_TEMP_GROUP') {
             this.messageNotice(SUCCESS_CREATE_TEMPGROUP)
-            remark = `与(${remark.toString()})创建临时群组`
+            remark = `与(${remark.join(',')})创建临时群组`
           } else {
             this.messageNotice(SUCCESS_CREATE_SINGLEGROUP)
-            remark = `与(${remark.toString()})创建单呼`
+            remark = `与(${remark.join(',')})创建单呼`
           }
           this.$store.commit(log.SaveLog, {account: this.user.msId, name: this.user.msName, type: 0, remark})
         })
         .catch((code) => {
-          console.log(code)
+          let remark
           this.locationGroup()
           this.failureCreat()
-          !this.tempGroupInfo && this.messageNotice(BUSYING)
+          console.log(Cids)
+          if (creatType !== 'SINGLE_TEMP_GROUP') {
+            remark = []
+            Cids.forEach(item => {
+              let name = this.allMembersObj[item].name
+              remark.push(name)
+            })
+            remark = `与(${remark.join(',')})创建临时群组失败`
+          } else {
+            remark = `与(${this.allMembersObj[Cids].name})创建临时群组失败`
+            remark = `与(${this.allMembersObj[Cids].name})创建单呼失败`
+          }
+          this.$store.commit(log.SaveLog, {account: this.user.msId, name: this.user.msName, type: 0, remark})
+          this.messageNotice(BUSYING)
         })
     },
     failureCreat () {

@@ -103,9 +103,6 @@ export default {
     containerStyle () {
       return this.getContainerStyle()
     },
-    user () {
-      return this.$store.getters.userInfo
-    },
     singleCallActiveCid () {
       return this.$store.getters.singleCallActiveCid
     },
@@ -132,12 +129,12 @@ export default {
     dispatchSwitchGroup (item) {
       this.$store.commit(types.SetSwitchingGroup, null)
       if (this.activeGid === item.gid) {
-        if (!this.tempGroupInfo || this.singleCallActiveCid) { // 没有临时群组或者在当前组有单呼
+        console.log(this.tempGroupInfo, !this.tempGroupInfo, this.singleCallActiveCid)
+        if (!this.tempGroupInfo || (this.tempGroupInfo && this.tempGroupInfo.creatType === 'SINGLE_TEMP_GROUP')) { // 没有临时群组或者在当前组有单呼
           this.debounce()
         } else { // 有临时群组时切换
-          let memberObj = this.$store.getters.memberList
-          if (memberObj && memberObj[item.gid]) {
-            this.$emit('on-init', memberObj[item.gid])
+          if (this.memberObj && this.memberObj[item.gid]) {
+            this.$emit('on-init', this.memberObj[item.gid])
           }
         }
       } else {
@@ -148,10 +145,10 @@ export default {
               let prevGroup = this.groupList.find(groupItem => {return groupItem.gid === this.activeGid})
               this.activeGid = item.gid
               this.$emit('on-init', memberList)
-  
-              if (this.tempGroupInfo && this.tempGroupInfo.creatType !== 'SINGLE_TEMP_GROUP') this.$store.commit(types.SetNowStatus, `${this.languageCtx.blockGroup.tempGroup}`)
+
+              if (this.tempGroupInfo && this.tempGroupInfo.creatType !== 'SINGLE_TEMP_GROUP') this.nowStatus = this.languageCtx.blockGroup.tempGroup
               this.handleReactiveOpenGroup(item)
-            }) 
+            })
           }
         })
       }

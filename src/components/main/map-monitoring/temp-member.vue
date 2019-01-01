@@ -126,7 +126,7 @@ export default {
     handleCreateTempGroup () {
       this.$emit('on-create', this.mapType)
       this.toCreatTempGroup({
-        creatType: 'MAP_TEMP_GROUP', 
+        creatType: 'MAP_TEMP_GROUP',
         cids: this.mapTempMemberList.map(item => {return item.cid})
       })
     },
@@ -155,8 +155,8 @@ export default {
   position absolute
   right 10px
   top 50%
-  transform translateY(-70%)
-  z-index 99999
+  transform translateY(-50%)
+  z-index 2
   .notice
     top 147px
     left 0
@@ -173,7 +173,7 @@ export default {
     cursor pointer
     &:hover
       color #999
-    span 
+    span
       text-align right
   .none
     text-align center

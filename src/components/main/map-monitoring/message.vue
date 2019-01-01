@@ -9,11 +9,11 @@
         >
         <Form ref="formInline">
           <FormItem prop="name">
-          <Input autofocus type="textarea" 
-                 :placeholder="languageCtx.messageCtx.placeholder" 
-                 :autosize="{minRows: 2,maxRows: 4}" 
-                 size="large" 
-                 v-model="sendingMessage" 
+          <Input autofocus type="textarea"
+                 :placeholder="languageCtx.messageCtx.placeholder"
+                 :autosize="{minRows: 2,maxRows: 4}"
+                 size="large"
+                 v-model="sendingMessage"
                  @on-keydown.stop="forbidTriggleVoice"/>
           </FormItem>
           <FormItem :style="{textAlign: 'right'}">

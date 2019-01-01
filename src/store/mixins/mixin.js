@@ -241,26 +241,27 @@ export default {
         }
       }
       if (creatType === 'MAP_TEMP_GROUP') this.hasMapTempGroup = true
+      console.log(this.hasMapTempGroup)
       if (creatType === 'SINGLE_TEMP_GROUP') {
-        let state = data.data.filter(item => {
+        let state = data.data.find(item => {
           return item.msId !== this.user.msId
         })
-        this.nowStatus = `${state[0].msName}单呼`
-      }
-      if (tempInfo) {
-        if (tempInfo.id) id = tempInfo.id
+        this.nowStatus = `${state.msName}单呼`
+      } else {
         this.nowStatus = this.languageContext.tempGroup
       }
+      if (tempInfo && tempInfo.id) id = tempInfo.id
       this.tempGroupInfo = {creater, type, onlineLength, cids, length, name, id, creatType}
-      console.log(this.tempGroupInfo)
       this.groupTempList = upOnline(tempGroupList)
       this.saveRecentGroup(this.tempGroupInfo)
     },
     saveRecentGroup (tempGroupInfo) {
       if (tempGroupInfo && tempGroupInfo.creatType !== 'SINGLE_TEMP_GROUP') {
         let myRecentTempInfo = Storage.localGet('myRecentTempInfo')
-        myRecentTempInfo[this.user.msId] = tempGroupInfo
-        Storage.localSet('myRecentTempInfo', myRecentTempInfo)
+        if (myRecentTempInfo) {
+          myRecentTempInfo[this.user.msId] = tempGroupInfo
+          Storage.localSet('myRecentTempInfo', myRecentTempInfo)
+        }
       }
     }
   }
